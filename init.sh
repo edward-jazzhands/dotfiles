@@ -1,6 +1,8 @@
 # Create symlinks to the dotfiles in the home directory
-ln -s .bashrc ~/.bashrc
-ln -s .gitconfig ~/.gitconfig
-ln -s .gitignore_global ~/.gitignore_global
-ln -s .justfile ~/.justfile
-ln -s .tmux.conf ~/.tmux.conf
+# NOTE: cd to this folder before running this script
+
+ln -s "$PWD/.bashrc" ~/.bashrc
+ln -s "$PWD/.gitconfig" ~/.gitconfig
+ln -s "$PWD/.gitignore_global" ~/.gitignore_global
+ln -s "$PWD/.justfile" ~/.justfile
+ln -s "$PWD/.tmux.conf" ~/.tmux.conf
