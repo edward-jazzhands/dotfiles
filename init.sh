@@ -1,27 +1,57 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 #! WARNING: This will overwrite existing files!
-# Create symlinks to the dotfiles in the home directory
 
 # Error handling setup
 set -e
 trap 'echo "Error occurred on line $LINENO" >&2' ERR
-trap 'echo "Script interrupted" >&2; exit 1' INT
+trap 'printf "    \033[0;31mScript interrupted\033[0m\n" >&2; exit 1' INT
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+printf "\033[0;31mWARNING\033[0m: Symlinks will overwrite existing .bashrc and other files!\n"
+read -p "1) Do you want to symlink your dotfiles? (y[default]/n): " answer1
 
-echo "Absolute path to scripts: $SCRIPT_DIR"
-echo "Creating symlinks in $HOME"
+create_symlinks() {
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-ln -sf "$SCRIPT_DIR/.bashrc" ~/.bashrc
-echo "Created ~/.bashrc"
-ln -sf "$SCRIPT_DIR/.gitconfig" ~/.gitconfig
-echo "Created ~/.gitconfig"
-ln -sf "$SCRIPT_DIR/.gitignore_global" ~/.gitignore_global
-echo "Created ~/.gitignore_global"
-ln -sf "$SCRIPT_DIR/.justfile" ~/.justfile
-echo "Created ~/.justfile"
-ln -sf "$SCRIPT_DIR/.tmux.conf" ~/.tmux.conf
-echo "Created ~/.tmux.conf"
+    echo "Absolute path to configs dir: $SCRIPT_DIR"
+    echo "Creating symlinks in $HOME"
 
-echo "Done!"
+    ln -sf "$SCRIPT_DIR/.bashrc" ~/.bashrc
+    echo "Created ~/.bashrc"
+    ln -sf "$SCRIPT_DIR/.gitconfig" ~/.gitconfig
+    echo "Created ~/.gitconfig"
+    ln -sf "$SCRIPT_DIR/.gitignore_global" ~/.gitignore_global
+    echo "Created ~/.gitignore_global"
+    ln -sf "$SCRIPT_DIR/.justfile" ~/.justfile
+    echo "Created ~/.justfile"
+    ln -sf "$SCRIPT_DIR/.tmux.conf" ~/.tmux.conf
+    echo "Created ~/.tmux.conf"
+
+    echo "Done creating symlinks"
+}
+
+if [[ "$answer1" =~ ^[Yy]$ ]]; then
+    create_symlinks
+elif [[ "$answer1" =~ ^[Nn]$ ]]; then
+    echo "Symlinks not created"
+elif [[ -z "$answer1" ]]; then
+    create_symlinks
+else
+    echo "Invalid input. Please enter y, n, or leave blank for yes."
+fi
+
+
+read -p "Do you want to set up your cloud drives with rclone? (y/n[default]): " answer2
+
+if [[ "$answer2" =~ ^[Yy]$ ]]; then
+    /bin/bash "$SCRIPT_DIR/rclone/systemd/setup.sh"
+    echo "Cloud drives script ran successfully"
+elif [[ "$answer2" =~ ^[Nn]$ ]]; then
+    echo "Not setting up cloud drives"
+elif [[ -z "$answer2" ]]; then
+    echo "Not setting up cloud drives"
+else
+    echo "Invalid input. Please enter y, n, or leave blank for no."
+fi
+
+exit 0
