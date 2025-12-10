@@ -134,6 +134,7 @@ fi
 
 # Add an "alert" alias for long running commands.  Use like so:
 #   sleep 10; alert
+#! NOTE: I have never used this before. It's just copied from the default .bashrc.
 alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
 
 
@@ -190,14 +191,18 @@ rgf() {
 # █        ██  ████████  ██████████████  ████████  ████████  ██    ████    ██████████  █
 # █  ████  ██  ████████  █████████      █████████        ██  ███   █████  ██████      ██
 
+# NOTE: If any of these apps are not installed, it'll just show an error message
+# and continue on, which is fine. Comment out those lines or install the apps
+# to stop seeing the error.
 
+# Rust + Cargo
 . "$HOME/.local/bin/env"
 . "$HOME/.cargo/env"
 
 # Homebrew
 eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 
-#Zoxide
+# Zoxide
 eval "$(zoxide init bash)"
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
