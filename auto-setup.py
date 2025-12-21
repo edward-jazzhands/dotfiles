@@ -39,6 +39,134 @@ SCRIPT_DIR: Path = Path(__file__).parent.resolve()
 HOME: Path = Path.home()
 
 
+def get_input(prompt: str, options: str, default: str) -> str:
+    """
+    Helper to handle interactive prompts with validation.
+    - If user enters an invalid option, they will be prompted again.
+    - If user enters a blank option, the default will be returned.
+    """
+
+    while True:
+        try:
+            user_input: str = (
+                input(
+                    f"{Color.BLUE}{prompt}{Color.NC}\n({options} [default={default}]): "
+                )
+                .lower()
+                .strip()
+            )
+            if not user_input:
+                return default
+            # Check if input matches any character in the options string (ignoring separators)
+            valid_chars: str = options.lower().replace("/", "")
+            if user_input in valid_chars and len(user_input) == 1:
+                return user_input
+            print(
+                f"{Color.RED}Invalid input. Please enter one of: {options}.{Color.NC}"
+            )
+        except EOFError:
+            return default
+
+
+class Setup:
+    def __init__(self, display_output: bool = False, dry_run: bool = False) -> None:
+        self.problems_found: list[tuple[str, int]] = []
+        self.display_output: bool = display_output
+        self.dry_run: bool = dry_run
+
+    def run_command(self, cmd: Sequence[str], use_sudo: bool = False) -> None:
+        """Runs a shell command or simulates it if self.dry_run is True."""
+
+        full_cmd: list[str] = (["sudo"] + list(cmd)) if use_sudo else list(cmd)
+        cmd_str: str = " ".join(full_cmd)
+
+        if self.dry_run:
+            print(f"{Color.YELLOW}[DRY-RUN]{Color.NC} Would execute: {cmd_str}")
+            return
+
+        try:
+            result: subprocess.CompletedProcess[str] = subprocess.run(
+                full_cmd, capture_output=True, text=True, check=False
+            )
+            # return result.returncode == 0, result.stdout + result.stderr
+        except Exception as e:
+            print(f"{Color.RED}Error{Color.NC}: {e}")
+        else:
+            print(f"{Color.GREEN}Success{Color.NC}: {result.stdout + result.stderr}")
+
+    def create_symlink(self, source: Path, target: Path) -> None:
+        """Creates a symbolic link, or simulates it if dry_run is True."""
+        target_path: Path = target.expanduser()
+
+        if self.dry_run:
+            print(
+                f"{Color.YELLOW}[DRY-RUN]{Color.NC} Would symlink: {source} -> {target_path}"
+            )
+            return
+
+        try:
+            if target_path.exists() or target_path.is_symlink():
+                target_path.unlink()
+            target_path.symlink_to(source)
+        except Exception as e:
+            print(f"{Color.RED}Error creating symlink for {target_path}: {e}{Color.NC}")
+        else:
+            print(f"{Color.GREEN}Success:{Color.NC} {source} -> {target_path}")
+
+    def symlink_dotfiles(self) -> None:
+        """Symlink dotfiles"""
+
+        dotfiles: list[str] = [
+            ".bashrc",
+            ".gitconfig",
+            ".gitignore_global",
+            ".justfile",
+            ".tmux.conf",
+        ]
+        for f in dotfiles:
+            source = SCRIPT_DIR / f
+            target = HOME / f
+            self.create_symlink(source, target)
+
+    def setup_truenas_smb(self) -> None:
+        """Symlink TrueNAS SMB shares"""
+
+        mount_type: str = get_input(
+            "Mount at boot (b), or mount lazily/automount (l)?", "b/l", "l"
+        )
+
+        if mount_type == "b":
+            print("Attempting to disable automount if enabled")
+            self.run_command(["systemctl", "disable", AUTOMOUNT_UNIT], use_sudo=True)
+
+            print("Creating symlink for mount at boot")
+            src_mount: Path = SCRIPT_DIR / "systemd" / MOUNT_UNIT
+            self.run_command(
+                ["ln", "-sf", str(src_mount), str(SYSTEMD_PATH)],
+                use_sudo=True,
+            )
+
+            print("Enabling mount at boot in systemctl")
+            self.run_command(["systemctl", "enable", MOUNT_UNIT], use_sudo=True)
+
+        else:  # Lazy/Automount
+            print("Attempting to disable mount at boot if enabled")
+            self.run_command(["systemctl", "disable", MOUNT_UNIT], use_sudo=True)
+
+            print("Creating both symlinks (Both are required)")
+            for unit in [MOUNT_UNIT, AUTOMOUNT_UNIT]:
+                src_unit: Path = SCRIPT_DIR / "systemd" / unit
+                self.run_command(
+                    ["ln", "-sf", str(src_unit), str(SYSTEMD_PATH)],
+                    use_sudo=True,
+                )
+
+            print("Enabling only automount in systemctl")
+            self.run_command(["systemctl", "enable", AUTOMOUNT_UNIT], use_sudo=True)
+
+        print("\nConfiguration complete.")
+
+
 class Troubleshooter:
     def __init__(self, display_output: bool = False) -> None:
         self.problems_found: list[tuple[str, int]] = []
@@ -318,134 +446,6 @@ class Troubleshooter:
 
 
 ################################################################################
-
-
-def get_input(prompt: str, options: str, default: str) -> str:
-    """
-    Helper to handle interactive prompts with validation.
-    - If user enters an invalid option, they will be prompted again.
-    - If user enters a blank option, the default will be returned.
-    """
-
-    while True:
-        try:
-            user_input: str = (
-                input(
-                    f"{Color.BLUE}{prompt}{Color.NC}\n({options} [default={default}]): "
-                )
-                .lower()
-                .strip()
-            )
-            if not user_input:
-                return default
-            # Check if input matches any character in the options string (ignoring separators)
-            valid_chars: str = options.lower().replace("/", "")
-            if user_input in valid_chars and len(user_input) == 1:
-                return user_input
-            print(
-                f"{Color.RED}Invalid input. Please enter one of: {options}.{Color.NC}"
-            )
-        except EOFError:
-            return default
-
-
-class Setup:
-    def __init__(self, display_output: bool = False, dry_run: bool = False) -> None:
-        self.problems_found: list[tuple[str, int]] = []
-        self.display_output: bool = display_output
-        self.dry_run: bool = dry_run
-
-    def run_command(self, cmd: Sequence[str], use_sudo: bool = False) -> None:
-        """Runs a shell command or simulates it if self.dry_run is True."""
-
-        full_cmd: list[str] = (["sudo"] + list(cmd)) if use_sudo else list(cmd)
-        cmd_str: str = " ".join(full_cmd)
-
-        if self.dry_run:
-            print(f"{Color.YELLOW}[DRY-RUN]{Color.NC} Would execute: {cmd_str}")
-            return
-
-        try:
-            result: subprocess.CompletedProcess[str] = subprocess.run(
-                full_cmd, capture_output=True, text=True, check=False
-            )
-            # return result.returncode == 0, result.stdout + result.stderr
-        except Exception as e:
-            print(f"{Color.RED}Error{Color.NC}: {e}")
-        else:
-            print(f"{Color.GREEN}Success{Color.NC}: {result.stdout + result.stderr}")
-
-    def create_symlink(self, source: Path, target: Path) -> None:
-        """Creates a symbolic link, or simulates it if dry_run is True."""
-        target_path: Path = target.expanduser()
-
-        if self.dry_run:
-            print(
-                f"{Color.YELLOW}[DRY-RUN]{Color.NC} Would symlink: {source} -> {target_path}"
-            )
-            return
-
-        try:
-            if target_path.exists() or target_path.is_symlink():
-                target_path.unlink()
-            target_path.symlink_to(source)
-        except Exception as e:
-            print(f"{Color.RED}Error creating symlink for {target_path}: {e}{Color.NC}")
-        else:
-            print(f"{Color.GREEN}Success:{Color.NC} {source} -> {target_path}")
-
-    def symlink_dotfiles(self) -> None:
-        """Symlink dotfiles"""
-
-        dotfiles: list[str] = [
-            ".bashrc",
-            ".gitconfig",
-            ".gitignore_global",
-            ".justfile",
-            ".tmux.conf",
-        ]
-        for f in dotfiles:
-            source = SCRIPT_DIR / f
-            target = HOME / f
-            self.create_symlink(source, target)
-
-    def setup_truenas_smb(self) -> None:
-        """Symlink TrueNAS SMB shares"""
-
-        mount_type: str = get_input(
-            "Mount at boot (b), or mount lazily/automount (l)?", "b/l", "l"
-        )
-
-        if mount_type == "b":
-            print("Attempting to disable automount if enabled")
-            self.run_command(["systemctl", "disable", AUTOMOUNT_UNIT], use_sudo=True)
-
-            print("Creating symlink for mount at boot")
-            src_mount: Path = SCRIPT_DIR / "systemd" / MOUNT_UNIT
-            self.run_command(
-                ["ln", "-sf", str(src_mount), str(SYSTEMD_PATH)],
-                use_sudo=True,
-            )
-
-            print("Enabling mount at boot in systemctl")
-            self.run_command(["systemctl", "enable", MOUNT_UNIT], use_sudo=True)
-
-        else:  # Lazy/Automount
-            print("Attempting to disable mount at boot if enabled")
-            self.run_command(["systemctl", "disable", MOUNT_UNIT], use_sudo=True)
-
-            print("Creating both symlinks (Both are required)")
-            for unit in [MOUNT_UNIT, AUTOMOUNT_UNIT]:
-                src_unit: Path = SCRIPT_DIR / "systemd" / unit
-                self.run_command(
-                    ["ln", "-sf", str(src_unit), str(SYSTEMD_PATH)],
-                    use_sudo=True,
-                )
-
-            print("Enabling only automount in systemctl")
-            self.run_command(["systemctl", "enable", AUTOMOUNT_UNIT], use_sudo=True)
-
-        print("\nConfiguration complete.")
 
 
 def main() -> None:
