@@ -20,6 +20,7 @@ class Color:
     YELLOW = "\033[1;33m"
     BLUE = "\033[0;36m"
     GRAY = "\033[1;30m"
+    WHITE_ON_RED = "\033[1;41m"
     NC = "\033[0m"  # No Color
 
 
@@ -57,7 +58,7 @@ def get_input(prompt: str, options: str, default: str) -> str:
         try:
             user_input: str = (
                 input(
-                    f"{Color.BLUE}{prompt}{Color.NC}\n({options} [default={default}]): "
+                    f"{prompt}\n({options} [default={default}]): "
                 )
                 .lower()
                 .strip()
@@ -76,9 +77,7 @@ def get_input(prompt: str, options: str, default: str) -> str:
 
 
 class Setup:
-    def __init__(self, display_output: bool = False, dry_run: bool = False) -> None:
-        self.problems_found: list[tuple[str, int]] = []
-        self.display_output: bool = display_output
+    def __init__(self, dry_run: bool = False) -> None:
         self.dry_run: bool = dry_run
 
     def run_command(self, cmd: Sequence[str], use_sudo: bool = False) -> None:
@@ -143,6 +142,8 @@ class Setup:
             
         # Symlink all oh-my-zsh scripts
         for file in OMZ_SCRIPTS_DIR.glob("*"):
+            if file.is_dir():
+                continue
             # source is already a Path object
             target = OMZ_CUSTOM_DIR / file.name
             self.create_symlink(file, target)
@@ -490,7 +491,11 @@ def main() -> None:
     if user_input == "1":
         print("#=============================================#")
         print("              Dotfiles Symlinker")
-
+        
+        print(
+            f"{Color.WHITE_ON_RED}WARNING: Symlinks will overwrite existing "
+            f".bashrc and other files.{Color.NC}\n"
+        )
         # Interactive Dry-Run Prompt
         dry_run_choice: str = get_input(
             "Run in Dry-Run mode? (No changes will be made)", "y/n", "n"
@@ -501,12 +506,6 @@ def main() -> None:
                 f"{Color.YELLOW}>>> DRY-RUN MODE ACTIVE: "
                 f"No changes will be written to disk. <<<{Color.NC}\n"
             )
-        else:
-            print(
-                f"{Color.RED}WARNING: Symlinks will overwrite existing "
-                f".bashrc and other files.{Color.NC}\n"
-            )
-
         setup = Setup(dry_run=dry_run)
         setup.symlink_dotfiles()
 

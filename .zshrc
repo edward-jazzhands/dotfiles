@@ -70,11 +70,23 @@ ZSH_THEME="agnoster"
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git)
+plugins=(git zoxide nvm)
 
+# Additional things needed before we source oh-my-zsh
+# Lazy load plugins:
+
+# NVM lazy load:
+zstyle ':omz:plugins:nvm' lazy yes
+
+# Here you can define additional commands that will trigger the nvm plugin to load
+zstyle ':omz:plugins:nvm' lazy-cmd typescript
+
+# Here source oh-my-zsh:
+#====================================================#
 source $ZSH/oh-my-zsh.sh
 
 # User configuration
+# ----------------------#
 
 # export MANPATH="/usr/local/man:$MANPATH"
 
