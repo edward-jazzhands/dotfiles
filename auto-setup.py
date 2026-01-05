@@ -28,15 +28,22 @@ MOUNT_UNIT = r"mnt-truenas\x2dtailnet-brents\x2ddata.mount"
 AUTOMOUNT_UNIT = r"mnt-truenas\x2dtailnet-brents\x2ddata.automount"
 MOUNT_UNIT_ESCAPED = r"mnt-truenas\\x2dtailnet-brents\\x2ddata.mount"
 AUTOMOUNT_UNIT_ESCAPED = r"mnt-truenas\\x2dtailnet-brents\\x2ddata.automount"
+
+MOUNT_UNIT_LOCAL = r"mnt-truenas\x2dlocal-brents\x2ddata.mount"
+AUTOMOUNT_UNIT_LOCAL = r"mnt-truenas\x2dlocal-brents\x2ddata.automount"
+MOUNT_UNIT_ESCAPED_LOCAL = r"mnt-truenas\\x2dlocal-brents\\x2ddata.mount"
+AUTOMOUNT_UNIT_ESCAPED_LOCAL = r"mnt-truenas\\x2dlocal-brents\\x2ddata.automount"
+
 MOUNT_POINT = "/mnt/truenas-tailnet/brents-data"
 SMB_SERVER = "truenas-scale"
 SMB_SHARE = "brents-data"
 CREDS_FILE = "/etc/smb-creds"
 
-
+HOME: Path = Path.home()
 SYSTEMD_PATH: Path = Path("/etc/systemd/system/")
 SCRIPT_DIR: Path = Path(__file__).parent.resolve()
-HOME: Path = Path.home()
+OMZ_SCRIPTS_DIR = Path(SCRIPT_DIR / "oh-my-zsh")
+OMZ_CUSTOM_DIR = Path(HOME / ".oh-my-zsh" / "custom")
 
 
 def get_input(prompt: str, options: str, default: str) -> str:
@@ -118,6 +125,12 @@ class Setup:
 
         dotfiles: list[str] = [
             ".bashrc",
+            ".zshrc",
+            ".init",
+            ".exports",
+            ".functions",
+            ".aliases",
+            ".tools",
             ".gitconfig",
             ".gitignore_global",
             ".justfile",
@@ -127,6 +140,12 @@ class Setup:
             source = SCRIPT_DIR / f
             target = HOME / f
             self.create_symlink(source, target)
+            
+        # Symlink all oh-my-zsh scripts
+        for file in OMZ_SCRIPTS_DIR.glob("*"):
+            # source is already a Path object
+            target = OMZ_CUSTOM_DIR / file.name
+            self.create_symlink(file, target)
 
     def setup_truenas_smb(self) -> None:
         """Symlink TrueNAS SMB shares"""
@@ -138,23 +157,27 @@ class Setup:
         if mount_type == "b":
             print("Attempting to disable automount if enabled")
             self.run_command(["systemctl", "disable", AUTOMOUNT_UNIT], use_sudo=True)
+            self.run_command(["systemctl", "disable", AUTOMOUNT_UNIT_LOCAL], use_sudo=True)
 
-            print("Creating symlink for mount at boot")
-            src_mount: Path = SCRIPT_DIR / "systemd" / MOUNT_UNIT
-            self.run_command(
-                ["ln", "-sf", str(src_mount), str(SYSTEMD_PATH)],
-                use_sudo=True,
-            )
+            print("Creating symlinks for mount at boot")
+            for unit in [MOUNT_UNIT, MOUNT_UNIT_LOCAL]:
+                src_unit: Path = SCRIPT_DIR / "systemd" / unit
+                self.run_command(
+                    ["ln", "-sf", str(src_unit), str(SYSTEMD_PATH)],
+                    use_sudo=True,
+                )
 
             print("Enabling mount at boot in systemctl")
             self.run_command(["systemctl", "enable", MOUNT_UNIT], use_sudo=True)
+            self.run_command(["systemctl", "enable", MOUNT_UNIT_LOCAL], use_sudo=True)
 
         else:  # Lazy/Automount
             print("Attempting to disable mount at boot if enabled")
             self.run_command(["systemctl", "disable", MOUNT_UNIT], use_sudo=True)
+            self.run_command(["systemctl", "disable", MOUNT_UNIT_LOCAL], use_sudo=True)
 
             print("Creating both symlinks (Both are required)")
-            for unit in [MOUNT_UNIT, AUTOMOUNT_UNIT]:
+            for unit in [MOUNT_UNIT, AUTOMOUNT_UNIT, MOUNT_UNIT_LOCAL, AUTOMOUNT_UNIT_LOCAL]:
                 src_unit: Path = SCRIPT_DIR / "systemd" / unit
                 self.run_command(
                     ["ln", "-sf", str(src_unit), str(SYSTEMD_PATH)],
@@ -163,6 +186,7 @@ class Setup:
 
             print("Enabling only automount in systemctl")
             self.run_command(["systemctl", "enable", AUTOMOUNT_UNIT], use_sudo=True)
+            self.run_command(["systemctl", "enable", AUTOMOUNT_UNIT_LOCAL], use_sudo=True)
 
         print("\nConfiguration complete.")
 
@@ -226,6 +250,11 @@ class Troubleshooter:
 
         mount_path = Path(f"/etc/systemd/system/{MOUNT_UNIT}")
         automount_path = Path(f"/etc/systemd/system/{AUTOMOUNT_UNIT}")
+        
+        # Locals not added to troubleshooter yet
+        # mount_path_local = Path(f"/etc/systemd/system/{MOUNT_UNIT_LOCAL}")
+        # automount_path_local = Path(f"/etc/systemd/system/{AUTOMOUNT_UNIT_LOCAL}")
+
 
         self.print_status(mount_path.exists(), "Mount unit file exists?")
         if not mount_path.exists():

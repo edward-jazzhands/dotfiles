@@ -3,3 +3,5 @@
 	email = ed.jazzhands@gmail.com
 [core]
 	excludesfile = /home/brent/.gitignore_global
+[init]
+	defaultBranch = main
