@@ -119,34 +119,47 @@ class Setup:
         else:
             print(f"{Color.GREEN}Success:{Color.NC} {source} -> {target_path}")
 
-    def symlink_dotfiles(self) -> None:
+    def symlink_dotfiles(self, bash_or_zsh: str) -> None:
         """Symlink dotfiles"""
-
-        dotfiles: list[str] = [
-            ".bashrc",
-            ".zshrc",
-            ".init",
-            ".exports",
-            ".functions",
-            ".aliases",
-            ".tools",
+        
+        assert bash_or_zsh in ["b", "z"]
+        
+        general_dotfiles: list[str] = [
             ".gitconfig",
             ".gitignore_global",
             ".justfile",
             ".tmux.conf",
         ]
-        for f in dotfiles:
+
+        bash_dotfiles: list[str] = [
+            ".bashrc",
+            ".init",
+            ".exports",
+            ".functions",
+            ".aliases",
+            ".tools",
+        ]
+        
+        for f in general_dotfiles:
             source = SCRIPT_DIR / f
             target = HOME / f
             self.create_symlink(source, target)
+        
+        if bash_or_zsh == "b":
             
-        # Symlink all oh-my-zsh scripts
-        for file in OMZ_SCRIPTS_DIR.glob("*"):
-            if file.is_dir():
-                continue
-            # source is already a Path object
-            target = OMZ_CUSTOM_DIR / file.name
-            self.create_symlink(file, target)
+            for f in bash_dotfiles:
+                source = SCRIPT_DIR / f
+                target = HOME / f
+                self.create_symlink(source, target)
+                
+        else:   # must be "z"
+            self.create_symlink(SCRIPT_DIR / ".zshrc", HOME / ".zshrc")            
+            for file in OMZ_SCRIPTS_DIR.glob("*"):
+                if file.is_dir():
+                    continue
+                # source is already a Path object
+                target = OMZ_CUSTOM_DIR / file.name
+                self.create_symlink(file, target)
 
     def setup_truenas_smb(self) -> None:
         """Symlink TrueNAS SMB shares"""
@@ -494,9 +507,13 @@ def main() -> None:
         
         print(
             f"{Color.WHITE_ON_RED}WARNING: Symlinks will overwrite existing "
-            f".bashrc and other files.{Color.NC}\n"
+            f"dotfiles. Use dry-run mode to preview.{Color.NC}\n"
         )
-        # Interactive Dry-Run Prompt
+        bash_or_zsh: str = get_input(
+            "Choose which shell you want", "b/z", "z"
+        )
+        print(f"{Color.YELLOW}{'Bash' if bash_or_zsh == 'b' else 'Zsh'} selected.{Color.NC}")
+        
         dry_run_choice: str = get_input(
             "Run in Dry-Run mode? (No changes will be made)", "y/n", "n"
         )
@@ -507,13 +524,12 @@ def main() -> None:
                 f"No changes will be written to disk. <<<{Color.NC}\n"
             )
         setup = Setup(dry_run=dry_run)
-        setup.symlink_dotfiles()
+        setup.symlink_dotfiles(bash_or_zsh)
 
     elif user_input == "2":
         print("#=============================================#")
         print("            SMB Over Tailscale Setup")
         
-        # Interactive Dry-Run Prompt
         dry_run_choice: str = get_input(
             "Run in Dry-Run mode? (No changes will be made)", "y/n", "n"
         )

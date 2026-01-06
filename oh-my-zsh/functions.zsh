@@ -53,3 +53,21 @@ rgf() {
   rg --files --iglob "*$1*"
 }
 
+
+# Turn Oh My Zsh plugins on or off and reload
+my-plugins() {
+  if [[ -z "$1" || -z "$2" ]]; then
+    echo "Usage: my-plugins on|off <plugin-name>"
+    return 1
+  fi
+  if [[ "$1" == "on" ]]; then
+    omz plugin enable "$2"
+    exec zsh
+  elif [[ "$1" == "off" ]]; then
+    omz plugin disable "$2"
+    exec zsh
+  else
+    echo "Invalid option: $1. Choose on or off."
+    return 1
+  fi
+}
