@@ -125,6 +125,7 @@ class Setup:
         assert bash_or_zsh in ["b", "z"]
         
         general_dotfiles: list[str] = [
+            ".profile",
             ".gitconfig",
             ".gitignore_global",
             ".justfile",
