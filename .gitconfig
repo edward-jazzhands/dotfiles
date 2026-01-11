@@ -4,4 +4,4 @@
 [core]
 	excludesfile = /home/brent/.gitignore_global
 [init]
-	defaultBranch = main
+	defaultBranch = foo

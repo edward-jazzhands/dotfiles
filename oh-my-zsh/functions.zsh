@@ -37,12 +37,6 @@ wgetsite() {
 # │    FZF and Ripgrep    │
 # └───────────────────────┘
 
-# fuzzy cd
-fcd() {
-  local dir
-  dir=$(find . -type d -not -path '*/\.*' | fzf) && cd "$dir"
-}
-
 # fuzzy shell history
 fsh() {
   eval "$(history | fzf | sed 's/ *[0-9]* *//')"
@@ -53,6 +47,64 @@ rgf() {
   rg --files --iglob "*$1*"
 }
 
+# ┌───────────────────────┐
+# │          Git          │
+# └───────────────────────┘
+
+git-upstream() {
+  git remote set-url origin "$1"
+}
+
+git-hardsync() {
+	git fetch upstream
+	git checkout main
+	git reset --hard upstream/main
+}
+
+prune-branches() {
+  # Capture pruned remote branches
+  pruned_branches=$(git fetch -p 2>&1 | grep '\[deleted\]' | sed -E 's/.*-> origin\///')
+
+  if [[ -z "$pruned_branches" ]]; then
+      echo "No pruned branches. Nothing to do."
+      exit 0
+  fi
+
+  echo "Remote branches pruned:"
+  echo "$pruned_branches"
+  echo
+
+  # Loop through each pruned branch
+  for pruned in $pruned_branches; do
+      if git show-ref --verify --quiet "refs/heads/$pruned"; then
+          read -p "Local branch '$pruned' matches a just-pruned remote. Delete? [y/N] " confirm
+          if [[ $confirm == [yY] ]]; then
+              git branch -D "$pruned"
+          fi
+      fi
+  done
+}
+
+# ┌───────────────────────┐
+# │         CI/CD         │
+# └───────────────────────┘
+
+diff-workflows() {
+  BASE_DIR="$projects/.scripts/github_workflows" 
+  TARGET_DIR="$(pwd)/.github/workflows"
+
+  if diff -qr "$BASE_DIR" "$TARGET_DIR" > /dev/null; then
+      echo "✅ No differences between $BASE_DIR and $TARGET_DIR"
+      exit 0
+  else
+      echo "❌ Differences detected between $BASE_DIR and $TARGET_DIR"
+      exit 1
+  fi
+}
+
+# ┌───────────────────────┐
+# │       Oh My Zsh       │
+# └───────────────────────┘
 
 # Turn Oh My Zsh plugins on or off and reload
 my-plugins() {

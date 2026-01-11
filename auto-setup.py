@@ -128,7 +128,6 @@ class Setup:
             ".profile",
             ".gitconfig",
             ".gitignore_global",
-            ".justfile",
             ".tmux.conf",
         ]
 

@@ -1,7 +1,10 @@
 # If not running interactively, don't do anything
-# NOTE: This safety check basically prevents programs and scripts from sourcing this file
-# since they shouldn't have any business sourcing it. It's a defensive check to prevent bugs
-# and recommended for this to always be present.
+# NOTE: This safety check basically prevents programs and scripts from sourcing
+# this file since they shouldn't have any business sourcing it. It's a defensive
+# check to prevent bugs and recommended for this to always be present.
+# You may have seen other bashrc files that instead do something like:
+# [ -n "$PS1" ] - However, that is considered to be less robust
+# than the below method
 case $- in
     *i*) ;;
       *) return;;
@@ -11,33 +14,23 @@ esac
 # See bash(1) for more options
 HISTCONTROL=ignoreboth
 
-# NOTE: You may want to enable or disable this depending on if this is
-# on a server environment (for example if you use a lot of tmux sessions,
-# you may not want all sessions to combine into one history file)
-# Append to the history file, don't overwrite it:
-#shopt -s histappend
-
 # NOTE: The defaults for this are 500/500
 # For setting history length see HISTSIZE and HISTFILESIZE in bash(1)
 HISTSIZE=1000
 HISTFILESIZE=2000
 
-# NOTE: This is mostly defensive, if this wasn't here then there's not a lot
-# of things affected. But doesn't hurt to have it.
+# This toggles if sessions should append to the session history file
+#shopt -s histappend
+
 # Check the window size after each command and, if necessary,
 # update the values of LINES and COLUMNS.
+# (This is mostly defensive, if this wasn't here then there's not a lot
+# of things affected. But doesn't hurt to have it.)
 shopt -s checkwinsize
 
-#! Ive never used chroot but this is here for reference
-# Set variable identifying the chroot you work in (used in the prompt below)
-#if [ -z "${debian_chroot:-}" ] && [ -r /etc/debian_chroot ]; then
-#    debian_chroot=$(cat /etc/debian_chroot)
-#fi
-
-# NOTE: This may be redundant but it's a defensive check, in case we're
-# in some minimal environment that didn't set up the bash competions already.
-# Enable programmable completion features (you don't need to enable
-# this, if it's already enabled in /etc/bash.bashrc and /etc/profile sources /etc/bash.bashrc).
+# Defensive check in case we're in some minimal environment that didn't set up the
+# bash competions already (Does nothing if it's already enabled in /etc/bash.bashrc
+# and /etc/profile sources /etc/bash.bashrc).
 if ! shopt -oq posix; then
   if [ -f /usr/share/bash-completion/bash_completion ]; then
     . /usr/share/bash-completion/bash_completion
