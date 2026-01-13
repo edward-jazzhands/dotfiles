@@ -19,3 +19,9 @@ export PATH="$HOME/.local/bin:$PATH"
 
 # Add $HOME/bin to the path
 export PATH="$HOME/bin:$PATH"
+
+if [ "$(hostname)" = "code-server" ]; then
+    # code-server is a container so UV needs to copy python files
+    # (instead of hard linking)
+    export UV_LINK_MODE="copy"
+fi
