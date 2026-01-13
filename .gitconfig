@@ -2,6 +2,7 @@
 	name = Edward Jazzhands
 	email = ed.jazzhands@gmail.com
 [core]
-	excludesfile = /home/brent/.gitignore_global
+	excludesfile = ~/.gitignore_global
+	fileMode = false
 [init]
-	defaultBranch = foo
+	defaultBranch = main
