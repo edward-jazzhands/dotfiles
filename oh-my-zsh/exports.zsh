@@ -24,4 +24,5 @@ if [ "$(hostname)" = "code-server" ]; then
     # code-server is a container so UV needs to copy python files
     # (instead of hard linking)
     export UV_LINK_MODE="copy"
+    export COLORTERM="truecolor"
 fi
