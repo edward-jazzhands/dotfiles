@@ -30,7 +30,7 @@ fi
 
 # Set up subordinate UIDs
 tmp1=$(mktemp)
-grep -v -e '^agent-1:' -e '^# Container' /etc/subgid > "$tmp1"
+grep -v -e '^agent-1:' -e '^# Container' /etc/subuid > "$tmp1"
 cat >> "$tmp1" <<'EOF'
 
 # Container UID 0 (root) -> Host UID 1001 (agent-1)
@@ -49,16 +49,21 @@ tmp2=$(mktemp)
 grep -v -e '^agent-1:' -e '^# Container' /etc/subgid > "$tmp2"
 cat >> "$tmp2" <<'EOF'
 
-# Container UID 0 (root) -> Host UID 1001 (agent-1)
+# Container GID 0 (root) -> Host GID 1001 (agent-1)
 agent-1:1001:1
-# Container UID 1 -> Host UID 1000 (brent)
+# Container GID 1 -> Host GID 1000 (brent)
 agent-1:1000:1
-# Container UIDs 2-65535 -> Host UIDs 165536-231070
+# Container GIDs 2-65535 -> Host GIDs 165536-231070
 agent-1:165536:65535
 EOF
 
 sudo cp "$tmp2" /etc/subgid
 rm "$tmp2"
 
+# Restart docker if it's running
+if systemctl is-active --quiet docker; then
+    echo "Restarting Docker daemon..."
+    sudo systemctl restart docker
+fi
 
 echo "Docker UserNS setup complete"
