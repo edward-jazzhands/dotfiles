@@ -1,5 +1,6 @@
 # Lazy shortcuts
 alias cl="clear"
+alias rcd="ranger-cd"
 alias ssh-config="nano ~/.ssh/config"
 alias pyactivate="source .venv/bin/activate"
 
