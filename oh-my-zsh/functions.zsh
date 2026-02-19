@@ -47,6 +47,44 @@ rgf() {
   rg --files --iglob "*$1*"
 }
 
+
+
+# ┌───────────────────┐
+# │       Ranger      │
+# └───────────────────┘
+
+function ranger-cd {
+    # local IFS=$'\t\n' sets the internal field separator to tabs and newlines, 
+    # which prevents word splitting issues if your directory path has spaces.
+    local IFS=$'\t\n'
+
+    # local tempfile="$(mktemp -t tmp.XXXXXX)" creates a temporary file with a random name.
+    # This is the file Ranger will write the last visited directory into.
+    local tempfile="$(mktemp -t tmp.XXXXXX)"
+
+    # local ranger_cmd=(command ranger --choosedir="$tempfile" "${@:-$(pwd)}") builds the 
+    # command as an array. command ranger bypasses any shell function named ranger and calls
+    # the real binary. --choosedir="$tempfile" tells Ranger to write the current directory to
+    # that temp file on exit. "${@:-$(pwd)}" passes any arguments you gave to the function,
+    # and falls back to the current directory if you didn't pass any.
+    local ranger_cmd=(
+        command ranger --choosedir="$tempfile" "${@:-$(pwd)}"
+    )
+
+    # ${ranger_cmd[@]} actually runs it.
+    ${ranger_cmd[@]}
+
+    # The if block checks that the tempfile exists, and that the directory written to it 
+    # is different from your current one, then cds into it.
+    if [[ -f "$tempfile" ]] && [[ "$(cat -- "$tempfile")" != "$(echo -n `pwd`)" ]]; then
+        cd -- "$(cat "$tempfile")" || return
+    fi
+
+    # command rm -f -- "$tempfile" cleans up the temp file regardless of what happened.
+    command rm -f -- "$tempfile"
+}
+
+
 # ┌───────────────────────┐
 # │          Git          │
 # └───────────────────────┘

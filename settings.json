@@ -6,5 +6,10 @@
     "editor.inlayHints.enabled": "offUnlessPressed",
     "prettier.printWidth": 100,
     "git.confirmSync": false,
-    "git.autofetch": true
+    "git.autofetch": true,
+    "pyright.disableOrganizeImports": true,
+    "python.analysis.autoImportCompletions": false,
+    "ty.completions.autoImport": false,
+    "javascript.updateImportsOnPaste.enabled": false,
+    "typescript.updateImportsOnPaste.enabled": false
 }
