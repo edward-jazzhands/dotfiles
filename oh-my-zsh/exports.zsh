@@ -14,6 +14,9 @@ export POETRY_VIRTUALENVS_IN_PROJECT=true
 # Allows you to `git clone $mygithub/repo-name` and other git commands.
 export mygithub="https://github.com/edward-jazzhands"
 
+export dotfiles="$HOME/code-projects/dotfiles"
+export pyscripts="$dotfiles/python-scripts"
+
 # Add $HOME/.local/bin to the path
 export PATH="$HOME/.local/bin:$PATH"
 

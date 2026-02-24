@@ -1,9 +1,7 @@
-# Lazy shortcuts
 alias cl="clear"
 alias rcd="ranger-cd"
 alias ssh-config="nano ~/.ssh/config"
 alias pyactivate="source .venv/bin/activate"
-
 alias show-interfaces="ip link show"
 
 # This is to view artificially added latency:
