@@ -160,6 +160,28 @@ my-plugins() {
 # │       Hardware        │
 # └───────────────────────┘
 
+fix_audio() {
+    local services=("pipewire" "wireplumber" "pipewire-pulse")
+
+    for service in "${services[@]}"; do
+        if ! systemctl --user cat "$service" &>/dev/null; then
+            echo "Error: $service is not present on this system" >&2
+            return 1
+        fi
+    done
+
+    systemctl --user restart pipewire pipewire-pulse wireplumber
+    local exit_code=$?
+
+    if [ $exit_code -ne 0 ]; then
+        echo "Error: failed to restart audio services" >&2
+        return $exit_code
+    fi
+
+    echo "Audio services restarted successfully"
+}
+
+
 # More flexible version
 add-latency() {
     local iface=${1:-"unset"}
