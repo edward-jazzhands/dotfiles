@@ -208,3 +208,47 @@ remove-latency() {
     fi
     sudo tc qdisc del dev "$iface" root 2>/dev/null && echo "Removed latency from ${iface}" || echo "No latency rules found on ${iface}"
 }
+
+
+
+# ┌──────────────────────┐
+# │        Ollama        │
+# └──────────────────────┘
+
+howto() {
+  if [[ -z "$1" ]]; then
+    echo "Usage: show <command description>" >&2
+    return 1
+  fi
+
+  local prompt="What is the bash/linux command to: $1
+Return a single runnable command only. No markdown, no backticks, no explanation, no $ prefix."
+  local cmd cmd_cleaned
+
+  cmd=$(llm "$prompt")
+
+  if [[ -z "$cmd" ]]; then
+    echo "No command returned." >&2
+    return 1
+  fi
+
+  # Strip markdown fences, backticks, and leading "$ "
+  cmd_cleaned=$(echo "$cmd" \
+    | sed '/^```/d' \
+    | sed 's/`//g' \
+    | sed 's/^[[:space:]]*\$[[:space:]]*//' \
+    | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+
+  echo ""
+  echo "  $cmd_cleaned"
+  echo ""
+  read -r "REPLY?Run this? [y/N] "
+  echo ""
+
+  if [[ "$REPLY" =~ ^[Yy]$ ]]; then
+    print -s "$cmd_cleaned"
+    eval "$cmd_cleaned"
+  else
+    echo "Cancelled."
+  fi
+}

@@ -29,3 +29,5 @@ if [ "$(hostname)" = "code-server" ]; then
     export UV_LINK_MODE="copy"
     export COLORTERM="truecolor"
 fi
+
+export OLLAMA_HOST="http://truenas-scale:11434"
