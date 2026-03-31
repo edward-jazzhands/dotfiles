@@ -12,7 +12,7 @@ do
             ;;
         "Install as UV Tool")
             echo "Installing as UV Tool..."
-            uv tool install ranger
+            uv tool install ranger-fm
             break
             ;;
         *) 
