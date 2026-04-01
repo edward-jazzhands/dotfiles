@@ -5,10 +5,9 @@ TrueNAS SMB Mount Troubleshooter
 """
 
 from __future__ import annotations
-from typing import Sequence
+from typing import Sequence, Callable
 import subprocess
-
-# import os
+import readline
 import sys
 from pathlib import Path
 
@@ -45,13 +44,24 @@ SYSTEMD_PATH: Path = Path("/etc/systemd/system/")
 SCRIPT_DIR: Path = Path(__file__).parent.resolve()
 OMZ_SCRIPTS_DIR = Path(SCRIPT_DIR / "oh-my-zsh")
 OMZ_CUSTOM_DIR = Path(HOME / ".oh-my-zsh" / "custom")
+TOOL_INSTALL_SCRIPTS_DIR = Path(SCRIPT_DIR / "tool-install-scripts")
 
+
+def make_completer(options: list[Path]) -> Callable:
+
+    def completer(text, state):
+        matches = [opt for opt in options if str(opt).startswith(text)]
+        return matches[state] if state < len(matches) else None
+
+    return completer
 
 def get_input(prompt: str, options: str, default: str) -> str:
     """
     Helper to handle interactive prompts with validation.
     - If user enters an invalid option, they will be prompted again.
     - If user enters a blank option, the default will be returned.
+
+    Separate the options with a "/" delimiter.
     """
 
     while True:
@@ -157,9 +167,59 @@ class Setup:
             for file in OMZ_SCRIPTS_DIR.glob("*"):
                 if file.is_dir():
                     continue
-                # source is already a Path object
                 target = OMZ_CUSTOM_DIR / file.name
                 self.create_symlink(file, target)
+
+    def run_tool_install_scripts(self) -> None:
+        """Run tool install scripts"""
+        
+        print("Tool install scripts program.")
+        tools_choice: str = get_input(
+            "Core set, or Optionals?", "c/o", "c"
+        )
+        if tools_choice == "c":
+            print("Running core set tool install scripts...")
+            core_set_dir = TOOL_INSTALL_SCRIPTS_DIR / "core-set"
+            for script in core_set_dir.glob("*.sh"):
+                # we dont need to use sudo here, if any of the scripts require
+                # it then it will be in the script.
+                self.run_command(["bash", str(script)], use_sudo=False)
+
+        elif tools_choice == "o":
+            optionals_dir = TOOL_INSTALL_SCRIPTS_DIR / "optionals"
+            optionals_list: list[Path] = list(optionals_dir.glob("*.sh"))
+
+            readline.set_completer(make_completer(optionals_list))
+            readline.parse_and_bind("tab: complete")
+
+            while True:
+
+                print("Available optionals:")
+                for i, script in enumerate(optionals_list):
+                    print(f"  {i+1}. {script.name}")
+                print()
+                while True:
+                    optional_choice = input("Choose program to install (number): ")
+                    try:
+                        optional_choice = int(optional_choice)
+                    except ValueError:
+                        print("Invalid input. Please enter a number.")
+                        continue
+                    if optional_choice <= 0 or optional_choice > len(optionals_list):
+                        print("Invalid input. Please enter a number between 1 and", len(optionals_list))
+                        continue
+                    break
+                # we added 1 to the index so we need to subtract 1 here
+                self.run_command(["bash", str(optionals_list[optional_choice-1])], use_sudo=False)
+
+                run_again: str = get_input(
+                    "Run again? (y/N) ", "y/n", "n"
+                )
+                if run_again == "y":
+                    continue
+                else:
+                    break
+        
 
     def setup_truenas_smb(self) -> None:
         """Symlink TrueNAS SMB shares"""
@@ -496,10 +556,11 @@ def main() -> None:
 
     print("Choose which program to run:")
     print("    1. Dotfile Symlink Creator")
-    print("    2. SMB Over Tailscale Setup")
-    print("    3. SMB Over Tailscale Troubleshooter")
+    print("    2. Tool Install Scripts")
+    print("    3. SMB Over Tailscale Setup")
+    print("    4. SMB Over Tailscale Troubleshooter")
 
-    user_input = get_input("Enter a number: ", "1/2/3", "1")
+    user_input = get_input("Enter a number: ", "1/2/3/4", "1")
 
     if user_input == "1":
         print("#=============================================#")
@@ -528,6 +589,23 @@ def main() -> None:
 
     elif user_input == "2":
         print("#=============================================#")
+        print("             Tool Install Scripts")
+
+        dry_run_choice: str = get_input(
+            "Run in Dry-Run mode? (No changes will be made)", "y/n", "n"
+        )
+        dry_run: bool = dry_run_choice == "y"
+        if dry_run:
+            print(
+                f"{Color.YELLOW}>>> DRY-RUN MODE ACTIVE: "
+                f"No changes will be written to disk. <<<{Color.NC}\n"
+            )
+        setup = Setup(dry_run=dry_run)
+        setup.run_tool_install_scripts()
+
+
+    elif user_input == "3":
+        print("#=============================================#")
         print("            SMB Over Tailscale Setup")
         
         dry_run_choice: str = get_input(
@@ -542,7 +620,7 @@ def main() -> None:
         setup = Setup(dry_run=dry_run)
         setup.setup_truenas_smb()
         
-    elif user_input == "3":
+    elif user_input == "4":
         
         print("#==============================================#")
         print("      SMB Over Tailscale Troubleshooter")

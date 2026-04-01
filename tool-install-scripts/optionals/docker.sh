@@ -1,3 +1,8 @@
+if command -v docker &> /dev/null; then
+    echo "Docker is already installed."
+    exit 0
+fi
+
 # Add Docker's official GPG key:
 sudo apt update
 sudo apt install ca-certificates curl

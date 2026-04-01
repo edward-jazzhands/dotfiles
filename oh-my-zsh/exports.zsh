@@ -10,6 +10,9 @@
 # container since only the project folder is bind mounted and persistent.
 export POETRY_VIRTUALENVS_IN_PROJECT=true
 
+# set profile env var to .zshrc because this is for oh-my-zsh
+export PROFILE="$HOME/.zshrc"
+
 # Set an env var for your personal github. 
 # Allows you to `git clone $mygithub/repo-name` and other git commands.
 export mygithub="https://github.com/edward-jazzhands"
@@ -31,3 +34,5 @@ if [ "$(hostname)" = "code-server" ]; then
 fi
 
 export OLLAMA_HOST="http://truenas-scale:11434"
+
+export PATH="$HOME/.opencode/bin:$PATH"

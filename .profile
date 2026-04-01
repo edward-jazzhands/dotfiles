@@ -7,6 +7,9 @@ fi
 # zsh sources this file and the .zshrc file automatically,
 # so we don't need to do anything here.
 
+# Ensure local bin dir exists
+mkdir -p "$HOME/.local/bin"
+
 # Add $HOME/.local/bin to the path
 export PATH="$HOME/.local/bin:$PATH"
 
@@ -24,3 +27,5 @@ if [ -f /etc/debian_version ]; then
 elif [ -f /etc/redhat-release ]; then
     echo "RedHat-based system"
 fi
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm

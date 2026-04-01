@@ -1,3 +1,8 @@
+if command -v lnav &> /dev/null; then
+    echo "Lnav is already installed."
+    exit 0
+fi
+
 # lnav (Logfile Navigator)
 curl -L -o /tmp/lnav.zip https://github.com/tstack/lnav/releases/download/v0.13.2/lnav-0.13.2-linux-musl-x86_64.zip && \
   unzip /tmp/lnav.zip -d /tmp && rm /tmp/lnav.zip  
