@@ -92,7 +92,7 @@ git-hardsync() {
 	git reset --hard upstream/main
 }
 
-prune-branches() {
+git-prune-branches() {
   # Capture pruned remote branches
   pruned_branches=$(git fetch -p 2>&1 | grep '\[deleted\]' | sed -E 's/.*-> origin\///')
 
@@ -114,23 +114,6 @@ prune-branches() {
           fi
       fi
   done
-}
-
-# ┌───────────────────────┐
-# │         CI/CD         │
-# └───────────────────────┘
-
-diff-workflows() {
-  BASE_DIR="$projects/.scripts/github_workflows" 
-  TARGET_DIR="$(pwd)/.github/workflows"
-
-  if diff -qr "$BASE_DIR" "$TARGET_DIR" > /dev/null; then
-      echo "✅ No differences between $BASE_DIR and $TARGET_DIR"
-      exit 0
-  else
-      echo "❌ Differences detected between $BASE_DIR and $TARGET_DIR"
-      exit 1
-  fi
 }
 
 # ┌───────────────────────┐
@@ -251,4 +234,29 @@ Return a single runnable command only. No markdown, no backticks, no explanation
   else
     echo "Cancelled."
   fi
+}
+
+# ┌──────────────────────┐
+# │        Docker        │
+# └──────────────────────┘
+
+
+docker-id() {
+  if [[ -z "$1" ]]; then
+    echo "Usage: docker-id <container-name>"
+    return 1
+  fi
+
+  sudo docker run --rm --entrypoint '' $1 id
+  echo ""
+}
+
+docker-logs() {
+  if [[ -z "$1" ]]; then
+    echo "Usage: docker-logs <container-name>"
+    return 1
+  fi
+
+  sudo docker logs --follow --tail=100 "$1"
+  echo ""
 }

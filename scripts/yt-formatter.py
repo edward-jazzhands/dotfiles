@@ -1,5 +1,5 @@
 # Copy the transcript using the "Show Transcript" button at the bottom
-# of the video description.
+# of the video description. Save it to a file.
 # Pass in the path to the transcript file as the first argument when you
 # run this script (eg. `python3 $pyscripts/yt-formatter.py transcript.md`)
 
