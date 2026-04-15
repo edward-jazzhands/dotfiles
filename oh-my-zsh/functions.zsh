@@ -49,67 +49,78 @@ rgf() {
 
 # search by function name and run the selected function (excludes any with leading underscore)
 funcs() {
-  # Declare two local variables so they don't leak into the shell environment:
-  # 'tmp' will hold the path to our temp file, 'fn' will hold the selected function name
-  local tmp fn
+  if ! command -v fzf &>/dev/null; then
+    echo "fns: fzf is required but not installed"
+    return 1
+  fi
 
+  local tmp fn
+  
   # mktemp creates a temporary file with a unique name in /tmp and returns its path.
-  # We store that path in $tmp so we can reference and clean it up later.
   tmp=$(mktemp)
 
-  # Dump the source code of every currently defined shell function into the temp file.
-  # 'functions' with no arguments prints all functions in the format:
-  #   funcname () {
-  #       ...body...
-  #   }
+  # trap ensures that the temp file is deleted when the script exits,
+  # including if the user presses Ctrl-C halfway through.
+  trap "rm -f $tmp" EXIT
+
+  # This dumps the source code of every currently defined shell function 
+  # into the temp file.
   functions > $tmp
 
-  # This is the main pipeline. Breaking it down:
-  #
-  #   print -l ${(ok)functions:#_*}
-  #   │        │  │       │
-  #   │        │  │       └── :#_*  → filter out keys matching the pattern _*
-  #   │        │  │            (removes all underscore-prefixed internal/completion functions)
-  #   │        │  └── (ok) → 'o' sorts the keys alphabetically, 'k' extracts just the keys
-  #   │        │       (keys of the $functions associative array = function names only)
-  #   │        └── $functions → built-in zsh associative array mapping function names to their bodies
-  #   └── print -l → prints each element on its own line (-l = newline-separated)
-  #
-  #   | fzf
-  #   └── pipes the list of function names into fzf for interactive fuzzy searching
-  #
-  #   --preview "awk '...' $tmp"
-  #   └── for each item highlighted in fzf, run this awk command against our temp file
-  #       to extract and display just that function's source code in the preview pane.
-  #
-  #       The awk program:  /^{} \(\)/{found=1} found{print; if(/^\}/) exit}
-  #       │
-  #       │   {} is replaced by fzf with the currently highlighted function name, so
-  #       │   if you highlight 'myfunction', awk sees: /^myfunction \(\)/{found=1}
-  #       │
-  #       ├── /^{} \(\)/{found=1}
-  #       │   └── Pattern: match a line that starts with the function name followed by ' ()'
-  #       │       (this is exactly how 'functions' formats the header line of each function)
-  #       │       When matched, set a flag variable 'found' to 1 (truthy)
-  #       │
-  #       └── found{print; if(/^\}/) exit}
-  #           └── While 'found' is truthy, print every line we encounter.
-  #               After printing each line, check if it matches /^\}/ — a closing brace
-  #               at the start of the line, which is how 'functions' terminates each definition.
-  #               If we see it, call exit to stop processing — we've printed the full function.
-  #
-  #    --plain strips bat's line numbers and file header so you just get the highlighted code
-  #    --color=always forces color output since bat detects it's in a pipe and would otherwise disable it.
-  fn=$(print -l ${(ok)functions:#_*} | fzf --preview "awk '/^{} \(\)/{found=1} found{print; if(/^\}/) exit}' $tmp | batcat -l zsh --color=always --plain")
+  local preview_cmd
+  if command -v batcat &>/dev/null; then
+
+    # This is the main pipeline. Breaking it down:
+    #
+    #   print -l ${(ok)functions:#_*}
+    #            │  │            │
+    #            │  │            └── :#_*  → filter out keys matching the pattern _*
+    #            │  │            (removes all underscore-prefixed internal functions)
+    #            │  └── (ok) → 'o' sorts the keys alphabetically, 'k' extracts just the keys
+    #            │       (keys of the $functions associative array = function names only)
+    #            └── $functions → built-in zsh associative array mapping function names to bodies
+    #
+    #   --preview "awk '...' $tmp"
+    #     │
+    #     └── preview arg: for each item highlighted in fzf, run this command.
+    #         The command runs awk against our temp file to extract and display 
+    #         just that function's source code in the preview pane.
+    #
+    #   The awk program:  /^{} \(\)/{found=1} found{print; if(/^\}/) exit}
+    #       │
+    #       │   {} is special fzf syntax to replace the currently highlighted function name,
+    #       │   so if you highlight 'myfunction', awk sees: /^myfunction \(\)/{found=1}
+    #       │
+    #       ├── /^{} \(\)/{found=1}
+    #       │   └── Pattern: match a line that starts with the function name followed by ' ()'
+    #       │       When matched, set a flag variable 'found' to 1 (truthy)
+    #       │
+    #       └── found{print; if(/^\}/) exit}
+    #           └── While 'found' is truthy, print every line we encounter.
+    #               After printing each line, check if it matches /^\}/ — a closing brace
+    #               at the start of the line, which is how 'functions' terminates each definition.
+    #               If we see it, call exit to stop processing — we've printed the full function.
+    #
+    #    --plain strips batcat's line numbers and file header so you just get the highlighted code
+    #    --color=always forces color output since bat detects it's in a pipe and would otherwise disable it.
+    #    --paging=never prevents batcat from using a pager, which could cause issues with fzf
+    #    -l zsh makes batcat use the zsh syntax highlighter
+
+    preview_cmd="awk '/^{} \(\)/{found=1} found{print; if(/^\}/) exit}' $tmp | batcat -l zsh --color=always --plain --paging=never"
+  else
+
+    # if no batcat, it'll just preview without any color or syntax highlighting
+    preview_cmd="awk '/^{} \(\)/{found=1} found{print; if(/^\}/) exit}' $tmp"
+  fi
+
+  # Capture the output of fzf and assign it to the variable 'fn'.
+  fn=$(print -l ${(ok)functions:#_*} | fzf --preview "$preview_cmd")
 
   # If the user pressed Escape or Ctrl-C, fzf returns an empty string.
-  # [[ -n $fn ]] checks that $fn is non-empty before trying to run it,
-  # preventing a 'command not found' error on cancel.
+  # [[ -n $fn ]] checks that $fn is non-empty before trying to run it.
   [[ -n $fn ]] && $fn
-
-  # Clean up the temp file. Without this it would persist in /tmp until the OS clears it.
-  rm -f $tmp
 }
+
 
 # ┌───────────────────┐
 # │       Ranger      │
