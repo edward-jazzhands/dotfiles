@@ -61,7 +61,7 @@ funcs() {
 
   # trap ensures that the temp file is deleted when the script exits,
   # including if the user presses Ctrl-C halfway through.
-  trap "rm -f $tmp" EXIT
+  trap "rm -f '$tmp'" EXIT
 
   # This dumps the source code of every currently defined shell function 
   # into the temp file.
@@ -120,7 +120,6 @@ funcs() {
   # [[ -n $fn ]] checks that $fn is non-empty before trying to run it.
   [[ -n $fn ]] && $fn
 }
-
 
 # ┌───────────────────┐
 # │       Ranger      │
@@ -273,7 +272,7 @@ remove-latency() {
 
 howto() {
   if [[ -z "$1" ]]; then
-    echo "Usage: show <command description>" >&2
+    echo "Usage: howto <command description>" >&2
     return 1
   fi
 

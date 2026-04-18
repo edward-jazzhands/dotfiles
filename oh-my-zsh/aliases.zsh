@@ -3,6 +3,7 @@ alias rcd="ranger-cd"
 alias ssh-config="nano ~/.ssh/config"
 alias pyactivate="source .venv/bin/activate"
 alias show-interfaces="ip link show"
+alias lazydocker="sudo $(which lazydocker)"
 
 # This is to view artificially added latency:
 alias show-latency="tc qdisc show"
