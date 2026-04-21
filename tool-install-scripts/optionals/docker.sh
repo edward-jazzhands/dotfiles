@@ -21,3 +21,10 @@ EOF
 
 sudo apt update
 sudo apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# Ask user if they want to be added to the docker group
+read -p "Add yourself to the docker group? (y/n): " add_to_group
+if [ "$add_to_group" = "y" ]; then
+    sudo usermod -aG docker $USER
+    echo "Done. Log out and back in (or run 'newgrp docker') for the change to take effect."
+fi
