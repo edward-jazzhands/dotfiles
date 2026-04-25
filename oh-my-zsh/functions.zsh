@@ -33,6 +33,26 @@ wgetsite() {
     # -E = use .html extension
 }
 
+rename-files() {
+  local old_prefix="$1"
+  local new_prefix="$2"
+
+  if [[ -z "$old_prefix" || -z "$new_prefix" ]]; then
+    echo "Usage: rename_files <old_prefix> <new_prefix>"
+    return 1
+  fi
+
+  local count=0
+  for f in "${old_prefix}"*; do
+    [[ -e "$f" ]] || { echo "No files found matching '${old_prefix}*'"; return 1; }
+    local new_name="${f/${old_prefix}/${new_prefix}}"
+    mv "$f" "$new_name" && ((count++))
+    echo "Renamed $f to $new_name"
+  done
+
+  echo "Renamed $count file(s)."
+}
+
 # ┌───────────────────────┐
 # │    FZF and Ripgrep    │
 # └───────────────────────┘
