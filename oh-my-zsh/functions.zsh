@@ -59,7 +59,10 @@ rename-files() {
 
 # fuzzy shell history
 fsh() {
-  eval "$(history | fzf | sed 's/ *[0-9]* *//')"
+  # eval "$(history | fzf | sed 's/ *[0-9]* *//')"
+  fn=$(history | fzf | sed 's/ *[0-9]* *//')
+  print -s "$fn"
+  eval "$fn"
 }
 
 # search by file name
