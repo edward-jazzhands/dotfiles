@@ -11,5 +11,6 @@
     "python.analysis.autoImportCompletions": false,
     "ty.completions.autoImport": false,
     "javascript.updateImportsOnPaste.enabled": false,
-    "typescript.updateImportsOnPaste.enabled": false
+    "typescript.updateImportsOnPaste.enabled": false,
+    "explorer.confirmDragAndDrop": true
 }
