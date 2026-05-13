@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 echo "Shtow - Its like Stow, but a bash script."
 echo "WARNING: This will overwrite existing symlinks."
 echo "Are you sure you want to continue? [y/N]"
@@ -14,10 +16,18 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 src="home"
 dest="$HOME"
 
+# Make sure the script runs from its own directory so 'find "$src"' always works
+cd "$SCRIPT_DIR" || exit 1
+
+# Sanity check
+if [ ! -d "$src" ]; then
+    echo "Error: Source directory '$SCRIPT_DIR/$src' not found."
+    exit 1
+fi
 
 # find "$src" -type f  →  recursively lists all regular files under src,
 # one per line. -type f excludes directories and symlinks.
-find "$src" -type f | while read -r file; do
+find "$src" -type f -print0 | while IFS= read -r -d '' file; do
 
     # ${file#$src/}  →  strips the leading "home/" prefix using bash's
     # prefix-stripping parameter expansion. The # means "remove the shortest
@@ -38,6 +48,8 @@ find "$src" -type f | while read -r file; do
     if [ -e "$target" ] && [ ! -L "$target" ]; then
         echo "SKIP (real file exists): $target"
         continue
+        # Note: We do not need to distinguish between files and directories
+        # here because the find command already excluded directories.
     fi
 
     echo "Linking: $file -> $target"
