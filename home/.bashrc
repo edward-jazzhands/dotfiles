@@ -60,12 +60,12 @@ esac
 
 
 dotfiles_list=(
-    ".exports"
-    ".functions"
-    ".aliases"
-    ".tools"
+    ".bash/.exports"
+    ".bash/.functions"
+    ".bash/.aliases"
+    ".bash/.tools"
 )
 
 for dotfile in "${dotfiles_list[@]}"; do
-    source "$HOME/$dotfile" && echo "✅ sourced $HOME/.$dotfile"
+    source "$HOME/$dotfile" && echo "✅ sourced $HOME/$dotfile"
 done

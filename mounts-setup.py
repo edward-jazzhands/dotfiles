@@ -1,13 +1,6 @@
-#!/usr/bin/env python3
-
-"""
-TrueNAS SMB Mount Troubleshooter
-"""
-
 from __future__ import annotations
-from typing import Sequence, Callable
+from typing import Sequence
 import subprocess
-import readline
 import sys
 from pathlib import Path
 
@@ -42,18 +35,9 @@ CREDS_FILE = "/etc/smb-creds"
 HOME: Path = Path.home()
 SYSTEMD_PATH: Path = Path("/etc/systemd/system/")
 SCRIPT_DIR: Path = Path(__file__).parent.resolve()
-OMZ_SCRIPTS_DIR = Path(SCRIPT_DIR / "oh-my-zsh")
-OMZ_CUSTOM_DIR = Path(HOME / ".oh-my-zsh" / "custom")
-TOOL_INSTALL_SCRIPTS_DIR = Path(SCRIPT_DIR / "tool-install-scripts")
+MOUNT_FILES_DIR = SCRIPT_DIR / "mounts"
 
 
-def make_completer(options: list[Path]) -> Callable:
-
-    def completer(text, state):
-        matches = [opt for opt in options if str(opt).startswith(text)]
-        return matches[state] if state < len(matches) else None
-
-    return completer
 
 def get_input(prompt: str, options: str, default: str) -> str:
     """
@@ -86,183 +70,69 @@ def get_input(prompt: str, options: str, default: str) -> str:
             return default
 
 
-class Setup:
-    def __init__(self, dry_run: bool = False) -> None:
-        self.dry_run: bool = dry_run
+def run_command(cmd: Sequence[str], use_sudo: bool = False, dry_run: bool = False) -> None:
+    """Runs a shell command or simulates it if self.dry_run is True."""
 
-    def run_command(self, cmd: Sequence[str], use_sudo: bool = False) -> None:
-        """Runs a shell command or simulates it if self.dry_run is True."""
+    full_cmd: list[str] = (["sudo"] + list(cmd)) if use_sudo else list(cmd)
+    cmd_str: str = " ".join(full_cmd)
 
-        full_cmd: list[str] = (["sudo"] + list(cmd)) if use_sudo else list(cmd)
-        cmd_str: str = " ".join(full_cmd)
+    if dry_run:
+        print(f"{Color.YELLOW}[DRY-RUN]{Color.NC} Would execute: {cmd_str}")
+        return
 
-        if self.dry_run:
-            print(f"{Color.YELLOW}[DRY-RUN]{Color.NC} Would execute: {cmd_str}")
-            return
-
-        try:
-            result: subprocess.CompletedProcess[str] = subprocess.run(
-                full_cmd, capture_output=True, text=True, check=False
-            )
-            # return result.returncode == 0, result.stdout + result.stderr
-        except Exception as e:
-            print(f"{Color.RED}Error{Color.NC}: {e}")
-        else:
-            print(f"{Color.GREEN}Success{Color.NC}: {result.stdout + result.stderr}")
-
-    def create_symlink(self, source: Path, target: Path) -> None:
-        """Creates a symbolic link, or simulates it if dry_run is True."""
-        target_path: Path = target.expanduser()
-
-        if self.dry_run:
-            print(
-                f"{Color.YELLOW}[DRY-RUN]{Color.NC} Would symlink: {source} -> {target_path}"
-            )
-            return
-
-        try:
-            if target_path.exists() or target_path.is_symlink():
-                target_path.unlink()
-            target_path.symlink_to(source)
-        except Exception as e:
-            print(f"{Color.RED}Error creating symlink for {target_path}: {e}{Color.NC}")
-        else:
-            print(f"{Color.GREEN}Success:{Color.NC} {source} -> {target_path}")
-
-    def symlink_dotfiles(self, bash_or_zsh: str) -> None:
-        """Symlink dotfiles"""
-        
-        assert bash_or_zsh in ["b", "z"]
-        
-        general_dotfiles: list[str] = [
-            ".profile",
-            ".gitconfig",
-            ".gitignore_global",
-            ".tmux.conf",
-        ]
-
-        bash_dotfiles: list[str] = [
-            ".bashrc",
-            ".init",
-            ".exports",
-            ".functions",
-            ".aliases",
-            ".tools",
-        ]
-        
-        for f in general_dotfiles:
-            source = SCRIPT_DIR / f
-            target = HOME / f
-            self.create_symlink(source, target)
-        
-        if bash_or_zsh == "b":
-            
-            for f in bash_dotfiles:
-                source = SCRIPT_DIR / f
-                target = HOME / f
-                self.create_symlink(source, target)
-                
-        else:   # must be "z"
-            self.create_symlink(SCRIPT_DIR / ".zshrc", HOME / ".zshrc")            
-            for file in OMZ_SCRIPTS_DIR.glob("*"):
-                if file.is_dir():
-                    continue
-                target = OMZ_CUSTOM_DIR / file.name
-                self.create_symlink(file, target)
-
-    def run_tool_install_scripts(self) -> None:
-        """Run tool install scripts"""
-        
-        print("Tool install scripts program.")
-        tools_choice: str = get_input(
-            "Core set, or Optionals?", "c/o", "c"
+    try:
+        result: subprocess.CompletedProcess[str] = subprocess.run(
+            full_cmd, capture_output=True, text=True, check=False
         )
-        if tools_choice == "c":
-            print("Running core set tool install scripts...")
-            core_set_dir = TOOL_INSTALL_SCRIPTS_DIR / "core-set"
-            for script in core_set_dir.glob("*.sh"):
-                # we dont need to use sudo here, if any of the scripts require
-                # it then it will be in the script.
-                self.run_command(["bash", str(script)], use_sudo=False)
+        # return result.returncode == 0, result.stdout + result.stderr
+    except Exception as e:
+        print(f"{Color.RED}Error{Color.NC}: {e}")
+    else:
+        print(f"{Color.GREEN}Success{Color.NC}: {result.stdout + result.stderr}")
+    
 
-        elif tools_choice == "o":
-            optionals_dir = TOOL_INSTALL_SCRIPTS_DIR / "optionals"
-            optionals_list: list[Path] = list(optionals_dir.glob("*.sh"))
+def setup_truenas_smb(dry_run: bool = False) -> None:
+    """Symlink TrueNAS SMB shares"""
 
-            readline.set_completer(make_completer(optionals_list))
-            readline.parse_and_bind("tab: complete")
+    mount_type: str = get_input(
+        "Mount at boot (b), or mount lazily/automount (l)?", "b/l", "l"
+    )
 
-            while True:
+    if mount_type == "b":
+        print("Attempting to disable automount if enabled")
+        run_command(["systemctl", "disable", AUTOMOUNT_UNIT], use_sudo=True)
+        run_command(["systemctl", "disable", AUTOMOUNT_UNIT_LOCAL], use_sudo=True)
 
-                print("Available optionals:")
-                for i, script in enumerate(optionals_list):
-                    print(f"  {i+1}. {script.name}")
-                print()
-                while True:
-                    optional_choice = input("Choose program to install (number): ")
-                    try:
-                        optional_choice = int(optional_choice)
-                    except ValueError:
-                        print("Invalid input. Please enter a number.")
-                        continue
-                    if optional_choice <= 0 or optional_choice > len(optionals_list):
-                        print("Invalid input. Please enter a number between 1 and", len(optionals_list))
-                        continue
-                    break
-                # we added 1 to the index so we need to subtract 1 here
-                self.run_command(["bash", str(optionals_list[optional_choice-1])], use_sudo=False)
+        print("Creating symlinks for mount at boot")
+        for unit in [MOUNT_UNIT, MOUNT_UNIT_LOCAL]:
+            src_unit: Path = SCRIPT_DIR / MOUNT_FILES_DIR / unit
+            run_command(
+                ["ln", "-sf", str(src_unit), str(SYSTEMD_PATH)],
+                use_sudo=True,
+            )
 
-                run_again: str = get_input(
-                    "Run again? (y/N) ", "y/n", "n"
-                )
-                if run_again == "y":
-                    continue
-                else:
-                    break
-        
+        print("Enabling mount at boot in systemctl")
+        run_command(["systemctl", "enable", MOUNT_UNIT], use_sudo=True)
+        run_command(["systemctl", "enable", MOUNT_UNIT_LOCAL], use_sudo=True)
 
-    def setup_truenas_smb(self) -> None:
-        """Symlink TrueNAS SMB shares"""
+    else:  # Lazy/Automount
+        print("Attempting to disable mount at boot if enabled")
+        run_command(["systemctl", "disable", MOUNT_UNIT], use_sudo=True)
+        run_command(["systemctl", "disable", MOUNT_UNIT_LOCAL], use_sudo=True)
 
-        mount_type: str = get_input(
-            "Mount at boot (b), or mount lazily/automount (l)?", "b/l", "l"
-        )
+        print("Creating both symlinks (Both are required)")
+        for unit in [MOUNT_UNIT, AUTOMOUNT_UNIT, MOUNT_UNIT_LOCAL, AUTOMOUNT_UNIT_LOCAL]:
+            src_unit: Path = SCRIPT_DIR / MOUNT_FILES_DIR / unit
+            run_command(
+                ["ln", "-sf", str(src_unit), str(SYSTEMD_PATH)],
+                use_sudo=True,
+            )
 
-        if mount_type == "b":
-            print("Attempting to disable automount if enabled")
-            self.run_command(["systemctl", "disable", AUTOMOUNT_UNIT], use_sudo=True)
-            self.run_command(["systemctl", "disable", AUTOMOUNT_UNIT_LOCAL], use_sudo=True)
+        print("Enabling only automount in systemctl")
+        run_command(["systemctl", "enable", AUTOMOUNT_UNIT], use_sudo=True)
+        run_command(["systemctl", "enable", AUTOMOUNT_UNIT_LOCAL], use_sudo=True)
 
-            print("Creating symlinks for mount at boot")
-            for unit in [MOUNT_UNIT, MOUNT_UNIT_LOCAL]:
-                src_unit: Path = SCRIPT_DIR / "systemd" / unit
-                self.run_command(
-                    ["ln", "-sf", str(src_unit), str(SYSTEMD_PATH)],
-                    use_sudo=True,
-                )
-
-            print("Enabling mount at boot in systemctl")
-            self.run_command(["systemctl", "enable", MOUNT_UNIT], use_sudo=True)
-            self.run_command(["systemctl", "enable", MOUNT_UNIT_LOCAL], use_sudo=True)
-
-        else:  # Lazy/Automount
-            print("Attempting to disable mount at boot if enabled")
-            self.run_command(["systemctl", "disable", MOUNT_UNIT], use_sudo=True)
-            self.run_command(["systemctl", "disable", MOUNT_UNIT_LOCAL], use_sudo=True)
-
-            print("Creating both symlinks (Both are required)")
-            for unit in [MOUNT_UNIT, AUTOMOUNT_UNIT, MOUNT_UNIT_LOCAL, AUTOMOUNT_UNIT_LOCAL]:
-                src_unit: Path = SCRIPT_DIR / "systemd" / unit
-                self.run_command(
-                    ["ln", "-sf", str(src_unit), str(SYSTEMD_PATH)],
-                    use_sudo=True,
-                )
-
-            print("Enabling only automount in systemctl")
-            self.run_command(["systemctl", "enable", AUTOMOUNT_UNIT], use_sudo=True)
-            self.run_command(["systemctl", "enable", AUTOMOUNT_UNIT_LOCAL], use_sudo=True)
-
-        print("\nConfiguration complete.")
+    print("\nConfiguration complete.")
 
 
 class Troubleshooter:
@@ -555,56 +425,12 @@ def main() -> None:
     """Main function"""
 
     print("Choose which program to run:")
-    print("    1. Dotfile Symlink Creator")
-    print("    2. Tool Install Scripts")
-    print("    3. SMB Over Tailscale Setup")
-    print("    4. SMB Over Tailscale Troubleshooter")
+    print("    1. SMB Over Tailscale Setup")
+    print("    2. SMB Over Tailscale Troubleshooter")
 
-    user_input = get_input("Enter a number: ", "1/2/3/4", "1")
+    user_input = get_input("Enter a number: ", "1/2", "1")
 
     if user_input == "1":
-        print("#=============================================#")
-        print("              Dotfiles Symlinker")
-        
-        print(
-            f"{Color.WHITE_ON_RED}WARNING: Symlinks will overwrite existing "
-            f"dotfiles. Use dry-run mode to preview.{Color.NC}\n"
-        )
-        bash_or_zsh: str = get_input(
-            "Choose which shell you want", "b/z", "z"
-        )
-        print(f"{Color.YELLOW}{'Bash' if bash_or_zsh == 'b' else 'Zsh'} selected.{Color.NC}")
-        
-        dry_run_choice: str = get_input(
-            "Run in Dry-Run mode? (No changes will be made)", "y/n", "n"
-        )
-        dry_run: bool = dry_run_choice == "y"
-        if dry_run:
-            print(
-                f"{Color.YELLOW}>>> DRY-RUN MODE ACTIVE: "
-                f"No changes will be written to disk. <<<{Color.NC}\n"
-            )
-        setup = Setup(dry_run=dry_run)
-        setup.symlink_dotfiles(bash_or_zsh)
-
-    elif user_input == "2":
-        print("#=============================================#")
-        print("             Tool Install Scripts")
-
-        dry_run_choice: str = get_input(
-            "Run in Dry-Run mode? (No changes will be made)", "y/n", "n"
-        )
-        dry_run: bool = dry_run_choice == "y"
-        if dry_run:
-            print(
-                f"{Color.YELLOW}>>> DRY-RUN MODE ACTIVE: "
-                f"No changes will be written to disk. <<<{Color.NC}\n"
-            )
-        setup = Setup(dry_run=dry_run)
-        setup.run_tool_install_scripts()
-
-
-    elif user_input == "3":
         print("#=============================================#")
         print("            SMB Over Tailscale Setup")
         
@@ -617,10 +443,10 @@ def main() -> None:
                 f"{Color.YELLOW}>>> DRY-RUN MODE ACTIVE: "
                 f"No changes will be written to disk. <<<{Color.NC}\n"
             )
-        setup = Setup(dry_run=dry_run)
-        setup.setup_truenas_smb()
+
+        setup_truenas_smb(dry_run=dry_run)
         
-    elif user_input == "4":
+    elif user_input == "2":
         
         print("#==============================================#")
         print("      SMB Over Tailscale Troubleshooter")
