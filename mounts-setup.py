@@ -70,10 +70,10 @@ def get_input(prompt: str, options: str, default: str) -> str:
             return default
 
 
-def run_command(cmd: Sequence[str], use_sudo: bool = False, dry_run: bool = False) -> None:
+def run_command(cmd: Sequence[str], dry_run: bool = False) -> None:
     """Runs a shell command or simulates it if self.dry_run is True."""
 
-    full_cmd: list[str] = (["sudo"] + list(cmd)) if use_sudo else list(cmd)
+    full_cmd: list[str] = (["sudo"] + list(cmd))
     cmd_str: str = " ".join(full_cmd)
 
     if dry_run:
@@ -100,37 +100,37 @@ def setup_truenas_smb(dry_run: bool = False) -> None:
 
     if mount_type == "b":
         print("Attempting to disable automount if enabled")
-        run_command(["systemctl", "disable", AUTOMOUNT_UNIT], use_sudo=True)
-        run_command(["systemctl", "disable", AUTOMOUNT_UNIT_LOCAL], use_sudo=True)
+        run_command(["systemctl", "disable", AUTOMOUNT_UNIT], dry_run=dry_run)
+        run_command(["systemctl", "disable", AUTOMOUNT_UNIT_LOCAL], dry_run=dry_run)
 
         print("Creating symlinks for mount at boot")
         for unit in [MOUNT_UNIT, MOUNT_UNIT_LOCAL]:
             src_unit: Path = SCRIPT_DIR / MOUNT_FILES_DIR / unit
             run_command(
                 ["ln", "-sf", str(src_unit), str(SYSTEMD_PATH)],
-                use_sudo=True,
+                dry_run=dry_run,
             )
 
         print("Enabling mount at boot in systemctl")
-        run_command(["systemctl", "enable", MOUNT_UNIT], use_sudo=True)
-        run_command(["systemctl", "enable", MOUNT_UNIT_LOCAL], use_sudo=True)
+        run_command(["systemctl", "enable", MOUNT_UNIT], dry_run=dry_run)
+        run_command(["systemctl", "enable", MOUNT_UNIT_LOCAL], dry_run=dry_run)
 
     else:  # Lazy/Automount
         print("Attempting to disable mount at boot if enabled")
-        run_command(["systemctl", "disable", MOUNT_UNIT], use_sudo=True)
-        run_command(["systemctl", "disable", MOUNT_UNIT_LOCAL], use_sudo=True)
+        run_command(["systemctl", "disable", MOUNT_UNIT], dry_run=dry_run)
+        run_command(["systemctl", "disable", MOUNT_UNIT_LOCAL], dry_run=dry_run)
 
         print("Creating both symlinks (Both are required)")
         for unit in [MOUNT_UNIT, AUTOMOUNT_UNIT, MOUNT_UNIT_LOCAL, AUTOMOUNT_UNIT_LOCAL]:
             src_unit: Path = SCRIPT_DIR / MOUNT_FILES_DIR / unit
             run_command(
                 ["ln", "-sf", str(src_unit), str(SYSTEMD_PATH)],
-                use_sudo=True,
+                dry_run=dry_run,
             )
 
         print("Enabling only automount in systemctl")
-        run_command(["systemctl", "enable", AUTOMOUNT_UNIT], use_sudo=True)
-        run_command(["systemctl", "enable", AUTOMOUNT_UNIT_LOCAL], use_sudo=True)
+        run_command(["systemctl", "enable", AUTOMOUNT_UNIT], dry_run=dry_run)
+        run_command(["systemctl", "enable", AUTOMOUNT_UNIT_LOCAL], dry_run=dry_run)
 
     print("\nConfiguration complete.")
 
