@@ -363,6 +363,8 @@ docker-logs() {
 
 truenas-api() {
 
+  local TRUENAS_ADDRESS="truenas-scale:8443"
+
   required_commands=(secret-tool websocat jq)
 
   for cmd in "${required_commands[@]}"; do
@@ -372,7 +374,7 @@ truenas-api() {
     fi
   done
 
-  options=(
+  api_methods=(
     "system.info"
     "pool.query"
     "disk.query"
@@ -383,14 +385,14 @@ truenas-api() {
     echo "Usage: truenas-api <method>"
     echo "Example: truenas-api system.info"
     echo "Available methods:"
-    echo "  ${options[*]}"
+    echo "  ${api_methods[*]}"
     return 1
   fi
 
-  if [[ ! " ${options[*]} " =~ " $1 " ]]; then
+  if [[ ! " ${api_methods[*]} " =~ " $1 " ]]; then
     echo "Invalid method: $1"
     echo "Available methods:"
-    echo "  ${options[*]}"
+    echo "  ${api_methods[*]}"
     return 1
   fi
 
@@ -399,11 +401,16 @@ truenas-api() {
   local api_key
   api_key=$(secret-tool lookup service truenas-api password apikey)
 
+  if [[ -z "$api_key" ]]; then
+    echo "No API key found. Run 'secret-tool store service truenas-api password apikey'"
+    return 1
+  fi
+
   {
     echo "{\"id\":1,\"jsonrpc\":\"2.0\",\"method\":\"auth.login_with_api_key\",\"params\":[\"$api_key\"]}"
     sleep 2
     echo "{\"id\":2,\"jsonrpc\":\"2.0\",\"method\":\"$method\",\"params\":[]}"
     sleep 4
-  } | websocat --no-close -t -E "wss://truenas-scale:8443/api/current" | jq
+  } | websocat --no-close -t -E "wss://$TRUENAS_ADDRESS/api/current" | jq
 
 }
