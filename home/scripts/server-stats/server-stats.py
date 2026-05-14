@@ -54,6 +54,12 @@ async def session():
         # This runs forever (until the connection drops or the script is killed).
         # Each iteration sends one request, waits for its response, writes the
         # result to disk for Conky to read, then sleeps before doing it again.
+
+        # system.info
+        # pool.query
+        # disk.query
+        # alert.list
+
         while True:
             await ws.send(json.dumps({
                 "id": req_id,

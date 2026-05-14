@@ -355,3 +355,55 @@ docker-logs() {
   sudo docker logs --follow --tail=100 "$1"
   echo ""
 }
+
+
+# ┌──────────────────────┐
+# │       TrueNAS        │
+# └──────────────────────┘
+
+truenas-api() {
+
+  required_commands=(secret-tool websocat jq)
+
+  for cmd in "${required_commands[@]}"; do
+    if ! command -v "$cmd" &>/dev/null; then
+      echo "$cmd is required but not installed"
+      return 1
+    fi
+  done
+
+  options=(
+    "system.info"
+    "pool.query"
+    "disk.query"
+    "alert.list"
+  )
+
+  if [[ -z "$1" ]]; then
+    echo "Usage: truenas-api <method>"
+    echo "Example: truenas-api system.info"
+    echo "Available methods:"
+    echo "  ${options[*]}"
+    return 1
+  fi
+
+  if [[ ! " ${options[*]} " =~ " $1 " ]]; then
+    echo "Invalid method: $1"
+    echo "Available methods:"
+    echo "  ${options[*]}"
+    return 1
+  fi
+
+  local method="$1"
+
+  local api_key
+  api_key=$(secret-tool lookup service truenas-api password apikey)
+
+  {
+    echo "{\"id\":1,\"jsonrpc\":\"2.0\",\"method\":\"auth.login_with_api_key\",\"params\":[\"$api_key\"]}"
+    sleep 2
+    echo "{\"id\":2,\"jsonrpc\":\"2.0\",\"method\":\"$method\",\"params\":[]}"
+    sleep 4
+  } | websocat --no-close -t -E "wss://truenas-scale:8443/api/current" | jq
+
+}
