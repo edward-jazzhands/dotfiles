@@ -4,7 +4,7 @@ alias pyactivate="source .venv/bin/activate"
 
 
 if [ "$(hostname)" = "truenas" ]; then
-    alias code-server-tty="sudo docker exec -it code-server zsh"
+    alias code-server-tty="docker exec -it code-server zsh"
 fi
 
 

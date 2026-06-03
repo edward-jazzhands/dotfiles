@@ -25,21 +25,21 @@ if [ ! -d "$src" ]; then
     exit 1
 fi
 
-# find "$src" -type f  →  recursively lists all regular files under src,
+# find "$src" -type f  ->  recursively lists all regular files under src,
 # one per line. -type f excludes directories and symlinks.
 find "$src" -type f -print0 | while IFS= read -r -d '' file; do
 
-    # ${file#$src/}  →  strips the leading "home/" prefix using bash's
+    # ${file#$src/}  ->  strips the leading "home/" prefix using bash's
     # prefix-stripping parameter expansion. The # means "remove the shortest
     # match of this pattern from the front of the string".
-    #   e.g. "home/.config/nvim/init.lua" → ".config/nvim/init.lua"
+    #   e.g. "home/.config/nvim/init.lua" -> ".config/nvim/init.lua"
     #
     # We then prepend $dest/ to get the full target path:
     #   e.g. "/home/user/.config/nvim/init.lua"
     target="$dest/${file#$src/}"
 
     # dirname strips the filename component, leaving just the directory path.
-    #   e.g. "/home/user/.config/nvim/init.lua" → "/home/user/.config/nvim"
+    #   e.g. "/home/user/.config/nvim/init.lua" -> "/home/user/.config/nvim"
     target_dir="$(dirname "$target")"
 
     mkdir -p "$target_dir"
