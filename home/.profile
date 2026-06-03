@@ -29,3 +29,9 @@ elif [ -f /etc/redhat-release ]; then
 fi
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+
+export DOTFILES_DIR="$HOME/dotfiles"
+
+# Run in the background cause it might take a couple seconds
+( bash "$DOTFILES_DIR/dotfiles-up-to-date.bash" ) 2>/dev/null &
+disown
