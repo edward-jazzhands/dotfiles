@@ -36,3 +36,5 @@ fi
 export OLLAMA_HOST="http://truenas-scale:11434"
 
 export PATH="$HOME/.opencode/bin:$PATH"
+
+export EDITOR="nano"

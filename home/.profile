@@ -33,5 +33,5 @@ export NVM_DIR="$HOME/.nvm"
 export DOTFILES_DIR="$HOME/dotfiles"
 
 # Run in the background cause it might take a couple seconds
-( bash "$DOTFILES_DIR/dotfiles-up-to-date.bash" ) 2>/dev/null &
+( bash "$DOTFILES_DIR/up-to-date.bash" ) 2>/dev/null &
 disown
