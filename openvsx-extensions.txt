@@ -1,0 +1,17 @@
+aaron-bond.better-comments
+astral-sh.ty
+bungcip.better-toml
+charliermarsh.ruff
+eamodio.gitlens
+esbenp.prettier-vscode
+foxundermoon.shell-format
+gruntfuggly.todo-tree
+lefd.sweetdracula-monokai
+ms-pyright.pyright
+ms-python.debugpy
+ms-python.python
+ms-python.vscode-python-envs
+nefrob.vscode-just-syntax
+supermaven.supermaven
+textualize.textual-syntax-highlighter
+th7as.text-compare
