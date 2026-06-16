@@ -51,21 +51,22 @@ def get_input(prompt: str, options: str, default: str) -> str:
             return default
 
 
-def run_command(cmd: Sequence[str], use_sudo: bool = False) -> None:
-    """Runs a shell command or simulates it if self.dry_run is True."""
+def run_command(cmd: Sequence[str]) -> None:
 
-    full_cmd: list[str] = (["sudo"] + list(cmd)) if use_sudo else list(cmd)
-    cmd_str: str = " ".join(full_cmd)
+    tool_name = Path(cmd[1]).stem
 
     try:
         result: subprocess.CompletedProcess[str] = subprocess.run(
-            full_cmd, capture_output=True, text=True, check=False
+            cmd, capture_output=True, text=True, check=False
         )
         # return result.returncode == 0, result.stdout + result.stderr
     except Exception as e:
-        print(f"{Color.RED}Error{Color.NC}: {e}")
+        print(f"{Color.RED}Error{Color.NC}: {tool_name} failed: {e}")
     else:
-        print(f"{Color.GREEN}Success{Color.NC}: {result.stdout + result.stderr}")
+        print(
+            f"{Color.GREEN}{tool_name} script was successful.{Color.NC}\n"
+            f"Output: {result.stdout + result.stderr}"
+        )
 
 
 def main() -> None:
@@ -76,12 +77,12 @@ def main() -> None:
         "Core set, or Optionals?", "c/o", "c"
     )
     if tools_choice == "c":
-        print("Running core set tool install scripts...")
+        print("Running core set tool install scripts...\n")
         core_set_dir = TOOL_INSTALL_SCRIPTS_DIR / "core-set"
         for script in core_set_dir.glob("*.sh"):
             # we dont need to use sudo here, if any of the scripts require
             # it then it will be in the script.
-            run_command(["bash", str(script)], use_sudo=False)
+            run_command(["bash", str(script)])
 
     elif tools_choice == "o":
         optionals_dir = TOOL_INSTALL_SCRIPTS_DIR / "optionals"
@@ -105,7 +106,7 @@ def main() -> None:
                     continue
                 break
             # we added 1 to the index so we need to subtract 1 here
-            run_command(["bash", str(optionals_list[optional_choice-1])], use_sudo=False)
+            run_command(["bash", str(optionals_list[optional_choice-1])])
 
             run_again: str = get_input(
                 "Run again? (y/N) ", "y/n", "n"

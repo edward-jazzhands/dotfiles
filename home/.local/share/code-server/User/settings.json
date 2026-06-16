@@ -15,5 +15,6 @@
     "explorer.confirmDragAndDrop": true,
     "[python]": {
         "diffEditor.ignoreTrimWhitespace": true
-    }
+    },
+    "window.menuBarVisibility": "toggle"
 }
