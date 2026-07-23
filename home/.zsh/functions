@@ -88,7 +88,13 @@ funcs() {
 
   # This dumps the source code of every currently defined shell function 
   # into the temp file.
-  functions > $tmp
+  # grep -v "^_" removes any functions that start with that character
+  functions \
+    | grep -v "^_" \
+    | grep -v "^nvm_" \
+    | grep -v "^prompt" \
+    | grep -v "^VCS_INFO" \
+    > "$tmp"
 
   local preview_cmd
   if command -v batcat &>/dev/null; then
