@@ -40,10 +40,10 @@ else
 fi
 
 dotfiles_list=(
-    ".zsh/.exports"
-    ".zsh/.functions"
-    ".zsh/.aliases"
-    ".zsh/.tools"
+    ".zsh/exports"
+    ".zsh/functions"
+    ".zsh/aliases"
+    ".zsh/tools"
 )
 
 for dotfile in $dotfiles_list; do

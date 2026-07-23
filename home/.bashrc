@@ -60,10 +60,10 @@ esac
 
 
 dotfiles_list=(
-    ".bash/.exports"
-    ".bash/.functions"
-    ".bash/.aliases"
-    ".bash/.tools"
+    ".bash/exports"
+    ".bash/functions"
+    ".bash/aliases"
+    ".bash/tools"
 )
 
 for dotfile in "${dotfiles_list[@]}"; do
