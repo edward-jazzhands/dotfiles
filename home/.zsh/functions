@@ -119,7 +119,7 @@ funcs() {
       preview_cmd="awk '/^{} \(\) \{/{found=1} found{print; if(/^\}/) exit}' $tmp_sources"
     fi
 
-    fn=$(fzf --preview "$preview_cmd" < "$tmp_names")
+    fn=$(fzf --tac --preview "$preview_cmd" < "$tmp_names")
 
     # [[ -n $fn ]] checks that $fn is non-empty before trying to run it.
     [[ -n $fn ]] && $fn
