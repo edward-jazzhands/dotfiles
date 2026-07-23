@@ -48,7 +48,7 @@ else
     PS1="\$(date '+%H:%M:%S') \u@\h:\w\$ "
 fi
 
-# NOTE: This updates the te>rminal tab title! It is important to have.
+# NOTE: This updates the terminal tab title! It is important to have.
 # If this is an xterm set the title to user@host:dir
 case "$TERM" in
 xterm*|rxvt*)
@@ -67,5 +67,9 @@ dotfiles_list=(
 )
 
 for dotfile in "${dotfiles_list[@]}"; do
-    source "$HOME/$dotfile" && echo "✅ sourced $HOME/$dotfile"
+    if [[ -f "$HOME/$dotfile" ]]; then
+        source "$HOME/$dotfile" && echo "✅ sourced $HOME/$dotfile"
+    else
+        echo "❌ File not found: $HOME/$dotfile"
+    fi
 done
