@@ -17,6 +17,7 @@ setopt PUSHD_IGNORE_DUPS      # Don't push duplicate directories to the stack
 setopt PUSHD_SILENT           # Hide the directory stack list on push/pop
 
 # General behavior
+setopt PROMPT_SUBST           # Allow prompt variables to be substituted
 unsetopt BEEP                 # Mute system beep sound on errors
 
 
