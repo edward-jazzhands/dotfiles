@@ -5,11 +5,11 @@
 
 # Add the following lines to your ~/.profile:
 #```
-#    export DOTFILES_DIR="$HOME/dotfiles"
+#    export DOTFILES="$HOME/dotfiles"
 
 #    # Run in the background cause it might take a couple seconds depending
 #    # on how Github feels today:
-#    ( bash "$DOTFILES_DIR/dotfiles-up-to-date.bash" ) 2>/dev/null &
+#    ( bash "$DOTFILES/dotfiles-up-to-date.bash" ) 2>/dev/null &
 #    disown
 #```
 
