@@ -33,7 +33,7 @@ zstyle ':completion:*' menu select                          # Arrow key menu to 
 zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"     # Colorize completions using LS_COLORS
 
 # Theme
-ZSH_THEME="$HOME/.zsh/themes/agnoster.zsh-theme"
+ZSH_THEME="$HOME/.shell/themes/agnoster.zsh-theme"
 if [[ -f "$ZSH_THEME" ]]; then
     source "$ZSH_THEME"
 else
@@ -41,10 +41,10 @@ else
 fi
 
 dotfiles_list=(
-    ".zsh/exports"
-    ".zsh/functions"
-    ".zsh/aliases"
-    ".zsh/tools"
+    ".shell/exports"
+    ".shell/functions"
+    ".shell/aliases"
+    ".shell/tools"
 )
 
 for dotfile in $dotfiles_list; do

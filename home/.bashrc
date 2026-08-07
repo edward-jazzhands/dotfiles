@@ -58,12 +58,11 @@ xterm*|rxvt*)
     ;;
 esac
 
-
+# NOTE: functions removed because it contains zsh-only code
 dotfiles_list=(
-    ".bash/exports"
-    ".bash/functions"
-    ".bash/aliases"
-    ".bash/tools"
+    ".shell/exports"
+    ".shell/aliases"
+    ".shell/tools"
 )
 
 for dotfile in "${dotfiles_list[@]}"; do

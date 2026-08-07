@@ -1,9 +1,12 @@
+export DEBEMAIL="ed.jazzhands@gmail.com"
+export DEBFULLNAME="Brent Lidstone"
+
 # These are locality settings. They ensure the terminal uses American English
 # style for formatting, dates, etc. C.UTF-8 (basic POSIX) is often recommended
 # instead of en_US.UTF-8 for containerized environments. In a normal desktop
 # environment these are usuallly set by the OS and not needed here.
-# export LANG=en_US.UTF-8
-# export LC_ALL=C.UTF-8
+export LANG="en_US.UTF-8"
+export LC_ALL="C.UTF-8"
 
 # Poertry by default creates virtual environments in its own internal location.
 # This makes it place them in the project folder instead. This is essential in a
@@ -17,14 +20,8 @@ export PROFILE="$HOME/.zshrc"
 # Allows you to `git clone $mygithub/repo-name` and other git commands.
 export mygithub="https://github.com/edward-jazzhands"
 
-export dotfiles="$HOME/code-projects/dotfiles"
-export pyscripts="$dotfiles/python-scripts"
-
-# Add $HOME/.local/bin to the path
-export PATH="$HOME/.local/bin:$PATH"
-
-# Add $HOME/bin to the path
-export PATH="$HOME/bin:$PATH"
+export DOTFILES="$HOME/dotfiles"
+export pyscripts="$DOTFILES/python-scripts"
 
 if [ "$(hostname)" = "code-server" ]; then
     # code-server is a container so UV needs to copy python files
@@ -35,8 +32,23 @@ fi
 
 export OLLAMA_HOST="http://truenas-scale:11434"
 
-export PATH="$HOME/.opencode/bin:$PATH"
-
 export EDITOR="nano"
 
 export PAGER="moor"
+
+# ┌───────────────────────┐
+# │     PATH Additions    │
+# └───────────────────────┘
+
+# Add local bin directory to PATH, but only if it's not already there
+if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+    export PATH="$HOME/.local/bin:$PATH"
+fi
+
+if [[ ":$PATH:" != *":$HOME/bin:"* ]]; then
+    export PATH="$HOME/bin:$PATH"
+fi
+
+if [[ ":$PATH:" != *":$HOME/.opencode/bin:"* ]]; then
+    export PATH="$HOME/.opencode/bin:$PATH"
+fi
