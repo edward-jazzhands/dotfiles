@@ -54,7 +54,16 @@ rename-files() {
 }
 
 # ┌───────────────────────┐
-# │    FZF and Ripgrep    │
+# │        Ripgrep        │
+# └───────────────────────┘
+
+# search by file name
+rgf() {
+  rg --files --iglob "*$1*"
+}
+
+# ┌───────────────────────┐
+# │          FZF          │
 # └───────────────────────┘
 
 # fuzzy shell history
@@ -65,9 +74,27 @@ fsh() {
   eval "$fn"
 }
 
-# search by file name
-rgf() {
-  rg --files --iglob "*$1*"
+fls() {
+  local base_dir="${1:-.}"
+  local selection raw_name full_path
+
+  selection=$(ls -la --color=force "$base_dir" | fzf --ansi) 
+  [[ -z "$selection" ]] && return
+
+  # Strip the 8 metadata columns and ignore symlink targets ('-> destination')
+  raw_name=$(echo "$selection" | sed -E 's/^([^ ]+ +){8}//; s/ -> .*//')
+  
+  # Join base directory and path
+  full_path="${base_dir%/}/$raw_name"
+
+  # check if directory
+  if [[ -d "$full_path" ]]; then
+    cd "$full_path"
+  else
+    #! Zsh ONLY: Quote spaces safely and push to command line buffer
+    # (q) will automatically make the path behave as though its in quotes
+    print -z "${(q)full_path}"
+  fi
 }
 
 
@@ -195,29 +222,6 @@ git-prune-branches() {
       fi
   done
 }
-
-# ┌───────────────────────┐
-# │       Oh My Zsh       │
-# └───────────────────────┘
-
-# Turn Oh My Zsh plugins on or off and reload
-my-plugins() {
-  if [[ -z "$1" || -z "$2" ]]; then
-    echo "Usage: my-plugins on|off <plugin-name>"
-    return 1
-  fi
-  if [[ "$1" == "on" ]]; then
-    omz plugin enable "$2"
-    exec zsh
-  elif [[ "$1" == "off" ]]; then
-    omz plugin disable "$2"
-    exec zsh
-  else
-    echo "Invalid option: $1. Choose on or off."
-    return 1
-  fi
-}
-
 
 # ┌───────────────────────┐
 # │       Hardware        │
