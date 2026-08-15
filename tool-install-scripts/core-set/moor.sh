@@ -6,6 +6,6 @@ if command -v moor &> /dev/null; then
     exit 0
 fi
 
-curl -L https://github.com/walles/moor/releases/download/v2.15.0/moor-v2.15.0-linux-amd64 \
+curl -fsSL https://github.com/walles/moor/releases/download/v2.15.0/moor-v2.15.0-linux-amd64 \
   -o "$HOME/.local/bin/moor"
 chmod +x "$HOME/.local/bin/moor"

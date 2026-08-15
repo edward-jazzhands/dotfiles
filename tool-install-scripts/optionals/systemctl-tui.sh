@@ -3,4 +3,4 @@ if command -v systemctl-tui &> /dev/null; then
     exit 0
 fi
 
-curl https://raw.githubusercontent.com/rgwood/systemctl-tui/master/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/rgwood/systemctl-tui/master/install.sh | bash

@@ -3,4 +3,4 @@ if command -v lazydocker &> /dev/null; then
     exit 0
 fi
 
-curl https://raw.githubusercontent.com/jesseduffield/lazydocker/master/scripts/install_update_linux.sh | bash
+curl -fsSL https://raw.githubusercontent.com/jesseduffield/lazydocker/master/scripts/install_update_linux.sh | bash

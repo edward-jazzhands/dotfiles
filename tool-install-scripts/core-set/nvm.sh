@@ -10,4 +10,4 @@ if command -v nvm &> /dev/null; then
     exit 0
 fi
 
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.4/install.sh | bash
+curl -fsSL -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.4/install.sh | bash

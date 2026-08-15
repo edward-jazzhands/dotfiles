@@ -3,4 +3,4 @@ if command -v uv &> /dev/null; then
     exit 0
 fi
 
-curl -LsSf https://astral.sh/uv/install.sh | sh
+curl -fsSL https://astral.sh/uv/install.sh | sh

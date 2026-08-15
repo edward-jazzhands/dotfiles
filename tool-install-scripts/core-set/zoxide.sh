@@ -4,4 +4,4 @@ if command -v zoxide &> /dev/null; then
 fi
 
 # Zoxide
-curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
